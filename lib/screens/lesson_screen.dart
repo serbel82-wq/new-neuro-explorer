@@ -48,7 +48,7 @@ class _LessonScreenState extends State<LessonScreen> {
 
   void _handleTaskAnswered(Task task) {
     // Используем ID задачи или ее заголовок как уникальный идентификатор
-    final taskId = task.id.isNotEmpty ? task.id : task.title;
+    final taskId = (task.id?.isNotEmpty ?? false) ? task.id! : task.title;
     if (_completedTaskIds.contains(taskId)) {
       return; // Награда за это задание уже выдана
     }
