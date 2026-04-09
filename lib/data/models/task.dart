@@ -27,6 +27,7 @@ class TaskQuestion {
 }
 
 class Task {
+  final String? id;
   final String title;
   final String description;
   final TaskType type;
@@ -35,6 +36,7 @@ class Task {
   final int totalPoints;
 
   const Task({
+    this.id,
     required this.title,
     required this.description,
     required this.type,
