@@ -39,19 +39,13 @@ class DefaultFirebaseOptions {
   }
 
   /// Конфигурация для Web
-  /// Заполните своими данными из Firebase Console > Настройки проекта > Ваши приложения > Web
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'YOUR_API_KEY', // Замените на ваш API Key из Firebase Console
-    appId:
-        'YOUR_APP_ID', // Замените на ваш App ID (например: 1:123456789:web:abc123...)
-    messagingSenderId: 'YOUR_SENDER_ID', // Замените на ваш Sender ID
-    projectId: 'YOUR_PROJECT_ID', // Замените на имя вашего проекта
-    authDomain:
-        'YOUR_PROJECT_ID.firebaseapp.com', // Обычно: [PROJECT_ID].firebaseapp.com
-    storageBucket:
-        'YOUR_PROJECT_ID.appspot.com', // Обычно: [PROJECT_ID].appspot.com
-    databaseURL:
-        'https://YOUR_PROJECT_ID.firebaseio.com', // URL Realtime Database (если используется)
+    apiKey: 'AIzaSyBKvIAEeP0JwvR55FFKLCOHzZqo_-cXLOg',
+    appId: '1:154388028243:web:3090902a53037d5e9e1fa6',
+    messagingSenderId: '154388028243',
+    projectId: 'gen-lang-client-0447894603',
+    authDomain: 'gen-lang-client-0447894603.firebaseapp.com',
+    storageBucket: 'gen-lang-client-0447894603.firebasestorage.app',
   );
 
   /// Конфигурация для Android
