@@ -1,0 +1,1254 @@
+import 'package:flutter/material.dart';
+
+import 'lesson_screen.dart';
+import 'final_project_screen.dart';
+import 'avatar_selection_screen.dart';
+import 'parent_dashboard_screen.dart';
+import 'chat_screen.dart';
+import '../data/models/season.dart';
+import '../data/models/lesson.dart';
+import '../data/services/storage_service.dart';
+import '../data/services/lesson_data_provider.dart';
+import '../data/services/gamification_service.dart';
+import '../widgets/gamification_widgets.dart';
+import '../widgets/premium_animations.dart';
+import '../app_routes.dart';
+
+class LevelsTreeScreen extends StatefulWidget {
+  const LevelsTreeScreen({
+    super.key,
+    this.userName = '',
+    this.initialLessonId,
+  });
+
+  final String userName;
+  final int? initialLessonId;
+
+  @override
+  State<LevelsTreeScreen> createState() => _LevelsTreeScreenState();
+}
+
+class _LevelsTreeScreenState extends State<LevelsTreeScreen> {
+  late String _displayName;
+  List<Season> _seasons = [];
+  List<Lesson> _currentSeasonLessons = [];
+  int _selectedSeason = 1;
+  int? _expandedSeasonId;
+
+  @override
+  void initState() {
+    super.initState();
+    _displayName = widget.userName.isNotEmpty
+        ? widget.userName
+        : (StorageService.getUserName() ?? 'Путник');
+    _loadData();
+    _processDailyLogin();
+
+    if (widget.initialLessonId != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        _openLesson(widget.initialLessonId!);
+      });
+    }
+  }
+
+  void _processDailyLogin() async {
+    final xpEarned = await GamificationService.processDailyLogin();
+    if (xpEarned > 0 && mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.star, color: Colors.amber),
+              const SizedBox(width: 8),
+              Text('+$xpEarned XP за ежедневный вход!'),
+            ],
+          ),
+          backgroundColor: Colors.deepPurple,
+          behavior: SnackBarBehavior.floating,
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        ),
+      );
+    }
+  }
+
+  void _loadData() {
+    setState(() {
+      _seasons = LessonDataProvider.getSeasons();
+      _currentSeasonLessons = LessonDataProvider.getSeason1Lessons();
+
+      _seasons = _seasons.map((season) {
+        final completedCount = _currentSeasonLessons
+            .where((l) => StorageService.isLessonCompleted(l.id))
+            .length;
+        final totalLessons = season.id == 1 ? 8 : 6;
+        final progress = totalLessons > 0 ? completedCount / totalLessons : 0.0;
+
+        bool isUnlocked = season.id == 1;
+        if (season.id == 2 && _seasons.isNotEmpty) {
+          final season1Progress = _seasons[0].progress;
+          isUnlocked = season1Progress >= 1.0;
+        }
+
+        return season.copyWith(
+          progress: progress,
+          isUnlocked: isUnlocked,
+        );
+      }).toList();
+    });
+  }
+
+  void _openLesson(int lessonId) {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => LessonScreen(
+          lessonId: lessonId,
+          userName: _displayName,
+          onComplete: () {
+            setState(() {
+              _loadData();
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void _selectSeason(int seasonId) {
+    setState(() {
+      _expandedSeasonId = null;
+      _selectedSeason = seasonId;
+      _currentSeasonLessons = LessonDataProvider.getLessonsBySeason(seasonId);
+      _loadData();
+    });
+  }
+
+  void _toggleSeasonExpand(int seasonId) {
+    setState(() {
+      if (_expandedSeasonId == seasonId) {
+        _expandedSeasonId = null;
+      } else {
+        _expandedSeasonId = seasonId;
+      }
+    });
+  }
+
+  void _showSeasonPreview(int seasonId) {
+    final season = _seasons.firstWhere((s) => s.id == seasonId);
+    final seasonLessons = LessonDataProvider.getLessonsBySeason(seasonId);
+    final seasonColors = [
+      Colors.deepPurple,
+      Colors.teal,
+      Colors.blue,
+      Colors.orange,
+      Colors.red,
+      Colors.green,
+      Colors.indigo,
+      Colors.pink,
+    ];
+    final color = seasonColors[(seasonId - 1) % seasonColors.length];
+
+    showDialog(
+      context: context,
+      builder: (context) => Dialog(
+        insetPadding: const EdgeInsets.all(20),
+        child: Container(
+          width: double.maxFinite,
+          height: MediaQuery.of(context).size.height * 0.85,
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(12),
+                          decoration: BoxDecoration(
+                            color: color.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(_getIconData(season.iconName),
+                              color: color, size: 28),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                season.title,
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .titleLarge
+                                    ?.copyWith(
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                              ),
+                              Text(
+                                '${seasonLessons.length} уроков',
+                                style: Theme.of(context)
+                                    .textTheme
+                                    .bodyMedium
+                                    ?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (!season.isUnlocked)
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 12, vertical: 6),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.lock,
+                                    size: 14, color: Colors.amber),
+                                const SizedBox(width: 4),
+                                Text(
+                                  'Закрыто',
+                                  style: TextStyle(
+                                    color: Colors.amber.shade800,
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Text(
+                      season.description,
+                      style: Theme.of(context).textTheme.bodyMedium,
+                    ),
+                  ],
+                ),
+              ),
+              const Divider(),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Row(
+                  children: [
+                    Icon(Icons.list, color: color, size: 20),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Уроки в сезоне',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                child: ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                  itemCount: seasonLessons.length,
+                  itemBuilder: (context, index) {
+                    final lesson = seasonLessons[index];
+                    return Card(
+                      margin: const EdgeInsets.only(bottom: 8),
+                      child: ListTile(
+                        leading: CircleAvatar(
+                          backgroundColor: color.withOpacity(0.2),
+                          child: Text(
+                            '${index + 1}',
+                            style: TextStyle(
+                                color: color, fontWeight: FontWeight.bold),
+                          ),
+                        ),
+                        title: Text(lesson.title,
+                            style: const TextStyle(fontSize: 14)),
+                        subtitle: Text(lesson.subtitle,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(fontSize: 12)),
+                        trailing: Text('${lesson.durationMinutes} мин',
+                            style: Theme.of(context).textTheme.bodySmall),
+                      ),
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Закрыть'),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  IconData _getIconData(String iconName) {
+    switch (iconName) {
+      case 'rocket_launch':
+        return Icons.rocket_launch;
+      case 'music_note':
+        return Icons.music_note;
+      case 'code':
+        return Icons.code;
+      case 'school':
+        return Icons.school;
+      case 'psychology':
+        return Icons.psychology;
+      case 'edit_note':
+        return Icons.edit_note;
+      case 'image':
+        return Icons.image;
+      case 'fact_check':
+        return Icons.fact_check;
+      case 'security':
+        return Icons.security;
+      case 'menu_book':
+        return Icons.menu_book;
+      case 'smart_toy':
+        return Icons.smart_toy;
+      default:
+        return Icons.star;
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final completedCount = StorageService.getTotalCompletedLessons();
+    final totalLessons = _currentSeasonLessons.length;
+    final progress = totalLessons > 0 ? completedCount / totalLessons : 0.0;
+
+    const seasonColor = Colors.deepPurple;
+
+    return Scaffold(
+      body: AnimatedGradientBackground(
+        colors: [
+          seasonColor.withOpacity(0.15),
+          Colors.purple.withOpacity(0.08),
+          Theme.of(context).colorScheme.surface,
+        ],
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(seasonColor, completedCount, totalLessons),
+              Expanded(
+                child: SingleChildScrollView(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _buildProgressCard(
+                          progress, totalLessons, completedCount, seasonColor),
+                      const SizedBox(height: 16),
+                      _buildSeasonSelector(),
+                      const SizedBox(height: 24),
+                      _buildLessonsList(seasonColor, progress),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader(Color seasonColor, int completedCount, int totalLessons) {
+    final profile = GamificationService.getProfile();
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      child: Row(
+        children: [
+          GestureDetector(
+            onTap: () => _openAvatarSelection(),
+            child: Container(
+              width: 50,
+              height: 50,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    seasonColor.withOpacity(0.2),
+                    seasonColor.withOpacity(0.1)
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Center(
+                child: _getAvatarIcon(profile.avatarId),
+              ),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'Привет, $_displayName! 👋',
+                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.bold,
+                      ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  '$completedCount из $totalLessons уроков пройдено',
+                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                      ),
+                ),
+              ],
+            ),
+          ),
+          _buildHeaderButtons(seasonColor),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeaderButtons(Color seasonColor) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        IconButton(
+          icon: Icon(Icons.people, color: seasonColor),
+          onPressed: () => _openChat(),
+        ),
+        IconButton(
+          icon: Icon(Icons.emoji_events, color: seasonColor),
+          onPressed: () {
+            _showAchievementsDialog();
+          },
+        ),
+        const SizedBox(width: 4),
+        IconButton(
+          icon: Icon(Icons.family_restroom, color: seasonColor),
+          onPressed: () => _openParentDashboard(),
+        ),
+      ],
+    );
+  }
+
+  void _openChat() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => ChatScreen(userName: _displayName),
+      ),
+    );
+  }
+
+  void _openParentDashboard() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const ParentDashboardScreen(),
+      ),
+    );
+  }
+
+  Widget _getAvatarIcon(String avatarId) {
+    switch (avatarId) {
+      case 'robot_1':
+        return const Icon(Icons.smart_toy, color: Colors.deepPurple, size: 24);
+      case 'rocket':
+        return const Icon(Icons.rocket_launch,
+            color: Colors.deepPurple, size: 24);
+      case 'brain':
+        return const Icon(Icons.psychology, color: Colors.deepPurple, size: 24);
+      case 'star':
+        return const Icon(Icons.star, color: Colors.amber, size: 24);
+      case 'bolt':
+        return const Icon(Icons.bolt, color: Colors.orange, size: 24);
+      case 'diamond':
+        return const Icon(Icons.diamond, color: Colors.blue, size: 24);
+      case 'robot_2':
+        return const Icon(Icons.android, color: Colors.green, size: 24);
+      case 'alien':
+        return const Icon(Icons.face, color: Colors.teal, size: 24);
+      case 'dragon':
+        return const Icon(Icons.pets, color: Colors.red, size: 24);
+      case 'wizard':
+        return const Icon(Icons.auto_fix_high, color: Colors.purple, size: 24);
+      case 'ninja':
+        return const Icon(Icons.visibility, color: Colors.grey, size: 24);
+      case 'astronaut':
+        return const Icon(Icons.nightlight, color: Colors.indigo, size: 24);
+      default:
+        return const Icon(Icons.smart_toy, color: Colors.deepPurple, size: 24);
+    }
+  }
+
+  void _openAvatarSelection() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => const AvatarSelectionScreen(),
+      ),
+    );
+  }
+
+  Widget _buildProgressCard(double progress, int totalLessons,
+      int completedCount, Color seasonColor) {
+    final seasonTitles = [
+      'Сезон 1: Первый контакт',
+      'Сезон 2: Мир звука и видео'
+    ];
+    final seasonSubtitles = ['8 уроков + финальный проект', '6 уроков'];
+
+    return Column(
+      children: [
+        LevelProgressWidget(compact: true),
+        const SizedBox(height: 16),
+        Card(
+          child: Container(
+            padding: const EdgeInsets.all(16),
+            decoration: BoxDecoration(
+              borderRadius: BorderRadius.circular(16),
+              gradient: LinearGradient(
+                colors: [
+                  seasonColor.withOpacity(0.1),
+                  seasonColor.withOpacity(0.05),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+            ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    Container(
+                      padding: const EdgeInsets.all(10),
+                      decoration: BoxDecoration(
+                        color: seasonColor.withOpacity(0.2),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Icon(Icons.emoji_events,
+                          color: seasonColor, size: 24),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            seasonTitles[_selectedSeason - 1],
+                            style: Theme.of(context)
+                                .textTheme
+                                .titleMedium
+                                ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                          ),
+                          Text(
+                            seasonSubtitles[_selectedSeason - 1],
+                            style:
+                                Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: Theme.of(context)
+                                          .colorScheme
+                                          .onSurfaceVariant,
+                                    ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 16),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: progress,
+                    minHeight: 10,
+                    backgroundColor: seasonColor.withOpacity(0.1),
+                    color: seasonColor,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      '${(progress * 100).toInt()}% завершено',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                            color: seasonColor,
+                          ),
+                    ),
+                    Text(
+                      '$completedCount / $totalLessons',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                            color:
+                                Theme.of(context).colorScheme.onSurfaceVariant,
+                          ),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSeasonSelector() {
+    final seasonColors = [
+      Colors.deepPurple,
+      Colors.teal,
+      Colors.blue,
+      Colors.orange,
+      Colors.red,
+      Colors.green,
+      Colors.indigo,
+      Colors.pink,
+    ];
+    final seasonNames = [
+      'Сезон 1',
+      'Сезон 2',
+      'Сезон 3',
+      'Сезон 4',
+      'Сезон 5',
+      'Сезон 6',
+      'Сезон 7',
+      'Сезон 8',
+    ];
+    final seasonIcons = [
+      Icons.rocket_launch,
+      Icons.music_note,
+      Icons.code,
+      Icons.auto_stories,
+      Icons.search,
+      Icons.lightbulb,
+      Icons.rocket,
+      Icons.emoji_events,
+    ];
+    final seasonLessons = [8, 6, 6, 6, 6, 6, 6, 8];
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          'Выбери сезон',
+          style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                fontWeight: FontWeight.bold,
+              ),
+        ),
+        const SizedBox(height: 12),
+        SizedBox(
+          height: 90,
+          child: ListView.builder(
+            scrollDirection: Axis.horizontal,
+            itemCount: 8,
+            itemBuilder: (context, index) {
+              final isSelected = _selectedSeason == index + 1;
+              final isUnlocked = _seasons.length > index
+                  ? _seasons[index].isUnlocked
+                  : (index == 0);
+              final color = seasonColors[index];
+
+              return GestureDetector(
+                onTap: isUnlocked
+                    ? () => _selectSeason(index + 1)
+                    : () => _showSeasonPreview(index + 1),
+                onLongPress: () => _showSeasonPreview(index + 1),
+                child: Container(
+                  width: 75,
+                  margin: EdgeInsets.only(right: index < 7 ? 8 : 0),
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: isSelected
+                        ? color.withOpacity(0.15)
+                        : isUnlocked
+                            ? Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest
+                            : Theme.of(context)
+                                .colorScheme
+                                .surfaceContainerHighest
+                                .withOpacity(0.5),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isSelected ? color : Colors.transparent,
+                      width: 2,
+                    ),
+                  ),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        isUnlocked ? seasonIcons[index] : Icons.lock_outline,
+                        color: isSelected
+                            ? color
+                            : Theme.of(context).colorScheme.onSurfaceVariant,
+                        size: 24,
+                      ),
+                      const SizedBox(height: 4),
+                      Text(
+                        seasonNames[index],
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              fontSize: 10,
+                              color: isSelected ? color : null,
+                            ),
+                        textAlign: TextAlign.center,
+                      ),
+                      Text(
+                        isUnlocked ? '${seasonLessons[index]} ур.' : '🔒',
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              fontSize: 9,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLessonsList(Color seasonColor, double progress) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Icon(Icons.play_circle_outline, color: seasonColor),
+            const SizedBox(width: 8),
+            Text(
+              'Уроки',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 16),
+        ListView.builder(
+          shrinkWrap: true,
+          physics: const NeverScrollableScrollPhysics(),
+          itemCount: _currentSeasonLessons.length,
+          itemBuilder: (context, index) {
+            final lesson = _currentSeasonLessons[index];
+            final isCompleted = StorageService.isLessonCompleted(lesson.id);
+            final isAvailable = index == 0 ||
+                StorageService.isLessonCompleted(
+                    _currentSeasonLessons[index - 1].id);
+
+            final lessonColors = [
+              Colors.blue,
+              Colors.purple,
+              Colors.orange,
+              Colors.teal,
+              Colors.red,
+              Colors.green,
+              Colors.indigo,
+              Colors.pink,
+            ];
+            final colorIndex = lesson.id > 100
+                ? (lesson.id - 101) % lessonColors.length
+                : (lesson.id - 1) % lessonColors.length;
+            final lessonColor = lessonColors[colorIndex];
+
+            return _LessonCard(
+              lesson: lesson,
+              index: index + 1,
+              isCompleted: isCompleted,
+              isAvailable: isAvailable,
+              iconData: _getIconData(lesson.iconName),
+              lessonColor: lessonColor,
+              onTap: isAvailable ? () => _openLesson(lesson.id) : null,
+            );
+          },
+        ),
+        const SizedBox(height: 24),
+        if (progress >= 1.0)
+          SizedBox(
+            width: double.infinity,
+            child: FilledButton.icon(
+              onPressed: () => _openFinalProject(),
+              icon: const Icon(Icons.emoji_events),
+              label: const Text('Перейти к финальному проекту'),
+              style: FilledButton.styleFrom(
+                backgroundColor: seasonColor,
+                padding: const EdgeInsets.symmetric(vertical: 16),
+              ),
+            ),
+          ),
+      ],
+    );
+  }
+
+  void _openFinalProject() {
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => FinalProjectScreen(
+          seasonId: _selectedSeason,
+          userName: _displayName,
+          onComplete: () {
+            setState(() {
+              _loadData();
+            });
+          },
+        ),
+      ),
+    );
+  }
+
+  void _showAchievementsDialog() {
+    final unlockedAchievements = GamificationService.getUnlockedAchievements();
+    final lockedAchievements = GamificationService.getLockedAchievements();
+    final stats = GamificationService.getGamificationStats();
+
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.emoji_events, color: Colors.amber),
+            const SizedBox(width: 8),
+            Text(
+                'Достижения (${unlockedAchievements.length}/${stats['totalAchievements']})'),
+          ],
+        ),
+        content: SizedBox(
+          width: double.maxFinite,
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              if (unlockedAchievements.isNotEmpty) ...[
+                const Text('Полученные:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                ...unlockedAchievements.map((a) => ListTile(
+                      leading: Icon(
+                        _getAchievementIcon(a.iconName),
+                        color: a.isRare ? Colors.amber : Colors.green,
+                      ),
+                      title: Text(a.title),
+                      subtitle: Text(a.description,
+                          style: const TextStyle(fontSize: 12)),
+                    )),
+                const Divider(),
+              ],
+              if (lockedAchievements.isNotEmpty) ...[
+                const Text('Заблокированные:',
+                    style: TextStyle(fontWeight: FontWeight.bold)),
+                const SizedBox(height: 8),
+                ...lockedAchievements.take(5).map((a) => ListTile(
+                      leading: Icon(
+                        _getAchievementIcon(a.iconName),
+                        color: Colors.grey,
+                      ),
+                      title: Text(a.title,
+                          style: const TextStyle(color: Colors.grey)),
+                      subtitle: Text(a.description,
+                          style: const TextStyle(
+                              fontSize: 12, color: Colors.grey)),
+                    )),
+              ],
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Закрыть'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  IconData _getAchievementIcon(String iconName) {
+    switch (iconName) {
+      case 'star':
+        return Icons.star;
+      case 'psychology':
+        return Icons.psychology;
+      case 'local_fire_department':
+        return Icons.local_fire_department;
+      case 'whatshot':
+        return Icons.whatshot;
+      case 'quiz':
+        return Icons.quiz;
+      case 'emoji_events':
+        return Icons.emoji_events;
+      case 'rocket_launch':
+        return Icons.rocket_launch;
+      case 'music_note':
+        return Icons.music_note;
+      case 'auto_fix_high':
+        return Icons.auto_fix_high;
+      case 'explore':
+        return Icons.explore;
+      case 'school':
+        return Icons.school;
+      case 'military_tech':
+        return Icons.military_tech;
+      case 'diamond':
+        return Icons.diamond;
+      case 'trending_up':
+        return Icons.trending_up;
+      case 'workspace_premium':
+        return Icons.workspace_premium;
+      case 'blocks':
+        return Icons.hub;
+      case 'palette':
+        return Icons.palette;
+      case 'edit_note':
+        return Icons.edit_note;
+      case 'security':
+        return Icons.security;
+      case 'family_restroom':
+        return Icons.family_restroom;
+      default:
+        return Icons.emoji_events;
+    }
+  }
+}
+
+class _LessonCard extends StatefulWidget {
+  final Lesson lesson;
+  final int index;
+  final bool isCompleted;
+  final bool isAvailable;
+  final IconData iconData;
+  final Color lessonColor;
+  final VoidCallback? onTap;
+
+  const _LessonCard({
+    required this.lesson,
+    required this.index,
+    required this.isCompleted,
+    required this.isAvailable,
+    required this.iconData,
+    required this.lessonColor,
+    this.onTap,
+  });
+
+  @override
+  State<_LessonCard> createState() => _LessonCardState();
+}
+
+class _LessonCardState extends State<_LessonCard> {
+  bool _isExpanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    final isLocked = !widget.isAvailable && !widget.isCompleted;
+
+    return Card(
+      margin: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: () {
+          if (widget.isAvailable || widget.isCompleted) {
+            widget.onTap?.call();
+          } else {
+            setState(() {
+              _isExpanded = !_isExpanded;
+            });
+          }
+        },
+        onLongPress: () {
+          setState(() {
+            _isExpanded = !_isExpanded;
+          });
+        },
+        borderRadius: BorderRadius.circular(16),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 300),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            gradient: widget.isCompleted
+                ? LinearGradient(
+                    colors: [
+                      Colors.green.withOpacity(0.1),
+                      Colors.green.withOpacity(0.05),
+                    ],
+                  )
+                : widget.isAvailable
+                    ? LinearGradient(
+                        colors: [
+                          widget.lessonColor.withOpacity(0.1),
+                          Colors.transparent,
+                        ],
+                      )
+                    : LinearGradient(
+                        colors: [
+                          Colors.grey.withOpacity(0.05),
+                          Colors.transparent,
+                        ],
+                      ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    width: 48,
+                    height: 48,
+                    decoration: BoxDecoration(
+                      color: widget.isCompleted
+                          ? Colors.green.withOpacity(0.2)
+                          : widget.isAvailable
+                              ? widget.lessonColor.withOpacity(0.2)
+                              : Theme.of(context)
+                                  .colorScheme
+                                  .surfaceContainerHighest,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Center(
+                      child: widget.isCompleted
+                          ? const Icon(Icons.check, color: Colors.green)
+                          : Icon(
+                              widget.isAvailable || widget.isCompleted
+                                  ? widget.iconData
+                                  : Icons.lock_outline,
+                              color: widget.isAvailable || widget.isCompleted
+                                  ? widget.lessonColor
+                                  : Theme.of(context)
+                                      .colorScheme
+                                      .onSurfaceVariant,
+                              size: 20,
+                            ),
+                    ),
+                  ),
+                  const SizedBox(width: 16),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.lesson.title,
+                          style: Theme.of(context)
+                              .textTheme
+                              .titleSmall
+                              ?.copyWith(
+                                fontWeight: FontWeight.w600,
+                                color: widget.isAvailable || widget.isCompleted
+                                    ? null
+                                    : Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                              ),
+                        ),
+                        const SizedBox(height: 4),
+                        Row(
+                          children: [
+                            Icon(
+                              Icons.timer_outlined,
+                              size: 14,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              '${widget.lesson.durationMinutes} мин',
+                              style: Theme.of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                    color: Theme.of(context)
+                                        .colorScheme
+                                        .onSurfaceVariant,
+                                  ),
+                            ),
+                            if (widget.isCompleted) ...[
+                              const SizedBox(width: 12),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 8, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: const Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(Icons.check_circle,
+                                        size: 12, color: Colors.green),
+                                    SizedBox(width: 4),
+                                    Text(
+                                      'Пройден',
+                                      style: TextStyle(
+                                        fontSize: 10,
+                                        color: Colors.green,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ],
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (isLocked)
+                    Icon(
+                      _isExpanded ? Icons.expand_less : Icons.expand_more,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    )
+                  else
+                    Icon(
+                      Icons.chevron_right,
+                      color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    ),
+                ],
+              ),
+              if (_isExpanded) ...[
+                const SizedBox(height: 12),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: isLocked
+                        ? Colors.amber.withOpacity(0.1)
+                        : widget.lessonColor.withOpacity(0.08),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: isLocked
+                          ? Colors.amber.withOpacity(0.2)
+                          : widget.lessonColor.withOpacity(0.2),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            isLocked ? Icons.lock_outline : Icons.visibility,
+                            size: 16,
+                            color: isLocked
+                                ? Colors.amber.shade700
+                                : widget.lessonColor,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            isLocked ? 'Что внутри:' : 'Описание:',
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                              color: isLocked
+                                  ? Colors.amber.shade700
+                                  : widget.lessonColor,
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        widget.lesson.subtitle,
+                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant,
+                            ),
+                      ),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 6,
+                        runSpacing: 6,
+                        children: [
+                          _buildTag(context, Icons.timer_outlined,
+                              '${widget.lesson.durationMinutes} мин'),
+                          if (widget.lesson.tasks.isNotEmpty ||
+                              (widget.lesson.taskStrings?.isNotEmpty ?? false))
+                            _buildTag(context, Icons.quiz, 'Задания'),
+                          _buildTag(context, Icons.star, '+50 XP'),
+                        ],
+                      ),
+                      if (isLocked) ...[
+                        const SizedBox(height: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 12, vertical: 6),
+                          decoration: BoxDecoration(
+                            color: Colors.amber.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(Icons.lock,
+                                  size: 14, color: Colors.amber.shade800),
+                              const SizedBox(width: 4),
+                              Text(
+                                'Пройдите предыдущий урок',
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w600,
+                                  color: Colors.amber.shade800,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTag(BuildContext context, IconData icon, String label) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: Theme.of(context).colorScheme.primary),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: const TextStyle(fontSize: 10),
+          ),
+        ],
+      ),
+    );
+  }
+}

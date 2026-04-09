@@ -1,0 +1,111 @@
+{
+  "@@locale": "ru",
+  "appTitle": "НейроИсследователь",
+  "welcomeTitle": "Добро пожаловать!",
+  "welcomeSubtitle": "Узнай, как устроены нейросети и научись использовать их с пользой",
+  "getStarted": "Начать",
+  "continueButton": "Продолжить",
+  "tryWithoutRegistration": "Попробовать без регистрации",
+  "login": "Войти",
+  "register": "Зарегистрироваться",
+  "email": "Email",
+  "password": "Пароль",
+  "confirmPassword": "Повторите пароль",
+  "childName": "Имя ребёнка",
+  "childAge": "Возраст ребёнка",
+  "noAccount": "Нет аккаунта?",
+  "hasAccount": "Уже есть аккаунт?",
+  "levelsTitle": "Уровни",
+  "seasonTitle": "Сезон {number}",
+  "@seasonTitle": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "lessonTitle": "Урок {number}",
+  "@lessonTitle": {
+    "placeholders": {
+      "number": {
+        "type": "int"
+      }
+    }
+  },
+  "theoryTitle": "Теория",
+  "tasksTitle": "Задания",
+  "completeLesson": "Завершить урок",
+  "xpEarned": "+{xp} XP",
+  "@xpEarned": {
+    "placeholders": {
+      "xp": {
+        "type": "int"
+      }
+    }
+  },
+  "level": "Уровень {level}",
+  "@level": {
+    "placeholders": {
+      "level": {
+        "type": "int"
+      }
+    }
+  },
+  "parentDashboard": "Кабинет родителя",
+  "subscription": "Подписка",
+  "premium": "Премиум",
+  "monthlyPrice": "{price} ₽/мес",
+  "@monthlyPrice": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "yearlyPrice": "{price} ₽/год",
+  "@yearlyPrice": {
+    "placeholders": {
+      "price": {
+        "type": "int"
+      }
+    }
+  },
+  "trialDays": "Бесплатный пробный период {days} дней",
+  "@trialDays": {
+    "placeholders": {
+      "days": {
+        "type": "int"
+      }
+    }
+  },
+  "subscribe": "Подписаться",
+  "cancelSubscription": "Отменить подписку",
+  "progress": "Прогресс",
+  "completedLessons": "Пройдено уроков: {count}",
+  "@completedLessons": {
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "achievements": "Достижения",
+  "weeklyReport": "Отчёт за неделю",
+  "aiAssistant": "AI Помощник",
+  "chatTitle": "Чат с помощником",
+  "typeMessage": "Введите сообщение...",
+  "send": "Отправить",
+  "settings": "Настройки",
+  "logout": "Выйти",
+  "error": "Ошибка",
+  "tryAgain": "Попробовать снова",
+  "loading": "Загрузка...",
+  "correct": "Правильно!",
+  "incorrect": "Неправильно",
+  "hint": "Подсказка",
+  "next": "Далее",
+  "back": "Назад",
+  "finish": "Закончить",
+  "selectAvatar": "Выберите аватар",
+  "childFriendlySystemPrompt": "Ты — дружелюбный учитель для детей 8-14 лет. Твои правила: 1. Используй простые слова, понятные детям 2. Объясняй сложные темы через примеры из жизни 3. Блокируй взрослые темы 4. Не пиши код за ребенка — объясняй логику 5. Поощряй творчество и любопытство 6. Будь терпеливым и поддерживающим"
+}
