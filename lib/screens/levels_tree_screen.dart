@@ -99,6 +99,49 @@ class _LevelsTreeScreenState extends State<LevelsTreeScreen> {
   }
 
   void _openLesson(int lessonId) {
+    // Find which season this lesson belongs to
+    final lessonSeason = LessonDataProvider.getSeasons().firstWhere(
+      (s) => LessonDataProvider.getLessonsBySeason(s.id).any((l) => l.id == lessonId),
+      orElse: () => LessonDataProvider.getSeasons().first,
+    );
+    
+    // Check if the season is unlocked
+    final seasonUnlockStatus = _seasons.firstWhere(
+      (s) => s.id == lessonSeason.id,
+      orElse: () => _seasons.first,
+    );
+    
+    if (!seasonUnlockStatus.isUnlocked) {
+      final requiredSeason = lessonSeason.id == 2 ? 'Сезон 1' : 'Сезон ${lessonSeason.id - 1}';
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('Сезон закрыт'),
+          content: Text(
+            'Чтобы открыть ${lessonSeason.title}, нужно:\n\n'
+            '• Полностью пройти $requiredSeason\n'
+            '• Или купить подписку',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Понятно'),
+            ),
+            FilledButton(
+              onPressed: () {
+                Navigator.pop(context);
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+                );
+              },
+              child: const Text('Купить подписку'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    
     Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => LessonScreen(

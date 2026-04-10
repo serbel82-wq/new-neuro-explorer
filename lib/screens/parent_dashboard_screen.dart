@@ -377,8 +377,8 @@ class ParentDashboardScreen extends StatelessWidget {
               width: double.infinity,
               child: OutlinedButton(
                 onPressed: () {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('Управление подпиской')),
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
                   );
                 },
                 child: const Text('Управление подпиской'),
@@ -399,27 +399,174 @@ class ParentDashboardScreen extends StatelessWidget {
             title: const Text('Ограничение времени'),
             subtitle: const Text('Не установлено'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
+            onTap: () => _showTimeLimitDialog(context),
           ),
           ListTile(
             leading: const Icon(Icons.notifications),
             title: const Text('Уведомления'),
             subtitle: const Text('Включены'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
+            onTap: () => _showNotificationsDialog(context),
           ),
           ListTile(
             leading: const Icon(Icons.email),
             title: const Text('Email-отчёты'),
             subtitle: const Text('Раз в неделю'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
+            onTap: () => _showEmailReportsDialog(context),
           ),
           ListTile(
             leading: const Icon(Icons.help_outline),
             title: const Text('Поддержка'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () {},
+            onTap: () => _showSupportDialog(context),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showTimeLimitDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Ограничение времени'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Установите дневной лимит времени для ребёнка:'),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              children: [
+                'Без ограничений', '15 минут', '30 минут', '1 час', '2 часа'
+              ].map((option) => ChoiceChip(
+                label: Text(option),
+                selected: false,
+                onSelected: (selected) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Установлено: $option')),
+                  );
+                },
+              )).toList(),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Отмена'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showNotificationsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Уведомления'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            SwitchListTile(
+              title: const Text('Уведомления о прогрессе'),
+              value: true,
+              onChanged: (value) {},
+            ),
+            SwitchListTile(
+              title: const Text('Напоминания об уроках'),
+              value: true,
+              onChanged: (value) {},
+            ),
+            SwitchListTile(
+              title: const Text('Новости и обновления'),
+              value: false,
+              onChanged: (value) {},
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Сохранить'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showEmailReportsDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Email-отчёты'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            const Text('Выберите частоту отчётов:'),
+            const SizedBox(height: 16),
+            Wrap(
+              spacing: 8,
+              children: [
+                'Ежедневно', 'Раз в неделю', 'Раз в месяц', 'Выкл'
+              ].map((option) => ChoiceChip(
+                label: Text(option),
+                selected: option == 'Раз в неделю',
+                onSelected: (selected) {
+                  Navigator.pop(context);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(content: Text('Установлено: $option')),
+                  );
+                },
+              )).toList(),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Отмена'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showSupportDialog(BuildContext context) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Поддержка'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.email),
+              title: const Text('Email'),
+              subtitle: const Text('support@neuroexplorer.ru'),
+              onTap: () {},
+            ),
+            ListTile(
+              leading: const Icon(Icons.telegram),
+              title: const Text('Telegram'),
+              subtitle: const Text('@neuroexplorer'),
+              onTap: () {},
+            ),
+            ListTile(
+              leading: const Icon(Icons.phone),
+              title: const Text('Телефон'),
+              subtitle: const Text('+7 (999) 123-45-67'),
+              onTap: () {},
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Закрыть'),
           ),
         ],
       ),
