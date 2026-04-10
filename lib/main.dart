@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:firebase_core/firebase_core.dart' show FirebaseOptions, kIsWeb;
-import 'package:flutter/foundation.dart' show debugPrint;
+import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 
 import 'firebase_options.dart';
 import 'app_routes.dart';
