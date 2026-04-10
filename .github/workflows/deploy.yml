@@ -28,13 +28,16 @@ jobs:
         run: flutter pub get
 
       - name: Build web release
-        run: flutter build web --release --web-renderer html
+        run: |
+          flutter build web --release --web-renderer html
+          echo "Build completed"
 
-      - name: Deploy
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: gh-pages
-          force: true
-          directory: build/web
-          allow-empty: true
+      - name: Deploy to gh-pages branch
+        run: |
+          cd build/web
+          git init
+          git config user.name "GitHub Actions"
+          git config user.email "actions@github.com"
+          git add -A
+          git commit -m "Deploy $(date)" || echo "Nothing to commit"
+          git push -f https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }} HEAD:gh-pages
