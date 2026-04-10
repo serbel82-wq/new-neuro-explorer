@@ -54,7 +54,12 @@ class GroqChatService {
 
   String getLimitMessage() {
     _checkDailyReset();
-    return 'Лимит исчерпан. Осталось $remainingMessages сообщений на сегодня.';
+    return 'Дневной лимит исчерпан. Чтобы продолжить общение с AI, купи подписку с безлимитными сообщениями!';
+  }
+
+  String getRemainingMessage() {
+    _checkDailyReset();
+    return 'Осталось: $remainingMessages сообщений на сегодня. Купи подписку для безлимитного общения!';
   }
 
   String _getNextKey() {

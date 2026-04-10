@@ -5,9 +5,15 @@ class AIAssistantWidget extends StatefulWidget {
   final String? childName;
   final String? assistantName;
   final VoidCallback? onMinimize;
+  final VoidCallback? onSubscribe;
 
   const AIAssistantWidget({
     super.key,
+    this.childName,
+    this.assistantName,
+    this.onMinimize,
+    this.onSubscribe,
+  });
     this.childName,
     this.assistantName,
     this.onMinimize,
@@ -250,14 +256,21 @@ class _AIAssistantWidgetState extends State<AIAssistantWidget> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'Осталось: ${_groqService.remainingMessages}/день',
+                    _groqService.canSendMessage 
+                      ? 'Осталось: ${_groqService.remainingMessages}/день'
+                      : 'Лимит исчерпан!',
                     style: TextStyle(fontSize: 10, color: Colors.grey[600]),
                   ),
-                  if (!_groqService.canSendMessage)
-                    TextButton(
-                      onPressed: () {},
-                      child: Text('Купить больше', style: TextStyle(fontSize: 10)),
+                  TextButton(
+                    onPressed: () {
+                      widget.onSubscribe?.call();
+                    },
+                    child: Text(
+                      _groqService.canSendMessage ? 'Купить подписку' : 'Купить',
+                      style: TextStyle(fontSize: 10, color: Colors.deepPurple),
                     ),
+                  ),
+                  ),
                 ],
               ),
             ),
