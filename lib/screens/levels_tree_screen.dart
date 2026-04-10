@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
-
 import 'lesson_screen.dart';
 import 'final_project_screen.dart';
 import 'avatar_selection_screen.dart';
 import 'parent_dashboard_screen.dart';
 import 'chat_screen.dart';
+import 'subscription_screen.dart';
 import '../data/models/season.dart';
 import '../data/models/lesson.dart';
 import '../data/services/storage_service.dart';
