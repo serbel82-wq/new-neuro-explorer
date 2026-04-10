@@ -18,12 +18,16 @@ jobs:
           flutter-version: '3.16.3'
 
       - run: flutter config --enable-web
+        working-directory: .
 
       - run: flutter pub get
+        working-directory: .
 
       - run: flutter build web --release --web-renderer html
+        working-directory: .
 
       - name: Deploy via API
+        working-directory: .
         uses: actions/github-script@v7
         with:
           script: |
@@ -38,7 +42,7 @@ jobs:
               const items = fs.readdirSync(dir);
               for (const item of items) {
                 const fullPath = path.join(dir, item);
-                const relPath = path.join(base, item);
+                const relPath = base ? path.join(base, item) : item;
                 const stat = fs.statSync(fullPath);
                 if (stat.isDirectory()) {
                   getFiles(fullPath, relPath);
@@ -50,11 +54,13 @@ jobs:
             
             getFiles(buildDir);
             console.log('Found', Object.keys(files).length, 'files');
+            console.log('Build dir exists:', fs.existsSync(buildDir));
+            console.log('Files:', Object.keys(files).slice(0, 10));
             
-            // Create blobs
             const owner = context.repo.owner;
             const repo = context.repo.repo;
             
+            // Create blobs
             const blobs = {};
             for (const [filePath, content] of Object.entries(files)) {
               const { data } = await github.rest.git.createBlob({
@@ -67,7 +73,7 @@ jobs:
             }
             
             // Get current gh-pages ref
-            let parentSha;
+            let parentSha = null;
             try {
               const { data: ref } = await github.rest.git.getRef({
                 owner,
@@ -76,7 +82,7 @@ jobs:
               });
               parentSha = ref.object.sha;
             } catch (e) {
-              parentSha = null;
+              console.log('No existing gh-pages, creating from scratch');
             }
             
             // Create tree
@@ -91,17 +97,16 @@ jobs:
               owner,
               repo,
               tree,
-              base_tree: parentSha
+              base_tree: parentSha || undefined
             });
             
             // Create commit
-            const commitParents = parentSha ? [parentSha] : [];
             const { data: commit } = await github.rest.git.createCommit({
               owner,
               repo,
               message: 'Deploy: ' + process.env.GITHUB_SHA,
               tree: treeData.sha,
-              parents: commitParents
+              parents: parentSha ? [parentSha] : []
             });
             
             // Update ref
