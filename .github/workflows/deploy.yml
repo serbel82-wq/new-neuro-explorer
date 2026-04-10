@@ -18,29 +18,18 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.24.5'
+          flutter-version: '3.16.9'
           channel: 'stable'
-      
-      - name: Cache Flutter dependencies
-        uses: actions/cache@v3
-        with:
-          path: |
-            ~/.pub-cache
-            ~/.gradle
-            build/
-          key: ${{ runner.os }}-flutter-${{ hashFiles('**/pubspec.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-flutter-
-      
+
       - name: Enable web support
         run: flutter config --enable-web
-      
+
       - name: Install dependencies
         run: flutter pub get
-      
+
       - name: Build web release
         run: flutter build web --release --web-renderer html
-      
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
