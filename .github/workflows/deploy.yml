@@ -8,26 +8,29 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+    concurrency:
+      group: "pages"
+      cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
-      
-      - uses: subosito/flutter-action@v2
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.16.3'
-      
-      - name: Build Flutter web
+
+      - name: Build
         run: |
           flutter config --enable-web
           flutter pub get
-          flutter build web --release --web-renderer html || true
-          echo "Build attempted"
-      
-      - name: Deploy to gh-pages
-        run: |
-          cd build/web
-          git init
-          git config user.name "Deploy"
-          git config user.email "deploy@github.com"
-          git add -A
-          (git commit -m "Deploy" || true)
-          git push -f https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:gh-pages
+          flutter build web --release --web-renderer html
+
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
