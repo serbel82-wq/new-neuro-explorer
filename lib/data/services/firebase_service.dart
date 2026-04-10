@@ -391,10 +391,12 @@ class SubscriptionService {
 
   bool _isTrialActive = true;
   bool _isSubscribed = false;
+  bool _hasAIAssistant = false;
   DateTime? _subscriptionEnd;
 
   bool get isSubscribed => _isSubscribed;
   bool get isTrialActive => _isTrialActive;
+  bool get hasAIAssistant => _hasAIAssistant;
   DateTime? get subscriptionEnd => _subscriptionEnd;
 
   Future<bool> activateTrial() async {
@@ -405,11 +407,12 @@ class SubscriptionService {
   }
 
   Future<bool> subscribe(
-      {required int months, required String paymentMethodId}) async {
+      {required int months, required String paymentMethodId, bool withAI = false}) async {
     await Future.delayed(const Duration(seconds: 2));
 
     _isTrialActive = false;
     _isSubscribed = true;
+    _hasAIAssistant = withAI;
     _subscriptionEnd = DateTime.now().add(Duration(days: 30 * months));
 
     return true;
@@ -438,6 +441,7 @@ class SubscriptionService {
           : trialDays,
       'monthlyPrice': monthlyPriceRubles,
       'yearlyPrice': yearlyPriceRubles,
+      'hasAIAssistant': _isSubscribed && _hasAIAssistant,
     };
   }
 }

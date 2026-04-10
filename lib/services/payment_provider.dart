@@ -26,28 +26,15 @@ class YooKassaPaymentProvider implements PaymentProvider {
     required int amount,
     required String description,
   }) async {
-    // =========================================================================
-    // ЭТОТ КОД ДОЛЖЕН ВЫПОЛНЯЯТЬСЯ НА БЭКЕНДЕ (YANDEX CLOUD FUNCTION)
-    // В мобильном приложении никогда не должны храниться секретные ключи.
-    // =========================================================================
-
-    // 1. ПРИЛОЖЕНИЕ ВЫЗЫВАЕТ ОБЛАЧНУЮ ФУНКЦИЮ
-    //    Приложение (клиент) отправляет запрос на вашу облачную функцию в Yandex Cloud,
-    //    передавая `planId` и `amount`.
-    //    Пример вызова:
-    //    final response = await http.post(
-    //      Uri.parse('https://YOUR_YANDEX_CLOUD_FUNCTION_URL/createPayment'),
-    //      body: {'planId': planId, 'amount': amount.toString()},
-    //    );
-    //    final redirectUrl = jsonDecode(response.body)['redirectUrl'];
-    //    return redirectUrl;
-
-    // 2. ЛОГИКА ОБЛАЧНОЙ ФУНКЦИИ (Node.js/Python/Go)
-    //    - Функция получает запрос от клиента.
-    //    - Используя SDK YooKassa и СЕКРЕТНЫЙ КЛЮЧ, она создает новый платеж.
-    //      const payment = await yooKassa.createPayment({
-    //        'amount': {
-    //          'value': amount.toString(),
+    // Пока возвращаем mock-URL для демонстрации
+    // В реальности нужно подключить бэкенд
+    debugPrint('Платеж: $description на сумму $amount руб.');
+    
+    // Для демонстрации - имитируем успешный платеж
+    // В реальном приложении здесь будет URL от YooKassa
+    await Future.delayed(const Duration(seconds: 1));
+    
+    return 'https://example.com/payment-success';
     //          'currency': 'RUB',
     //        },
     //        'payment_method_data': {

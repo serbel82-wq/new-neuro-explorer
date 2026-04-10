@@ -159,7 +159,7 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         ),
         const SizedBox(height: 16),
         const Text(
-          'По подписке',
+          'Базовый (уроки без AI)',
           style: TextStyle(
               fontWeight: FontWeight.w600, fontSize: 14, color: Colors.grey),
         ),
@@ -168,24 +168,41 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
           children: [
             Expanded(
               child: _buildPricingCard(
-                'Месяц',
-                '$_monthlyPrice ₽',
+                'Базовый Месяц',
+                '199 ₽',
                 'в месяц',
                 false,
-                _monthlyPrice,
+                199,
+                isBasic: true,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _buildPricingCard(
-                'Год',
-                '${(_yearlyPrice / 12).round()} ₽',
-                'в месяц',
-                true,
-                _yearlyPrice,
+                'Базовый Год',
+                '1490 ₽',
+                'в год',
+                false,
+                1490,
+                isBasic: true,
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 16),
+        const Text(
+          'С AI Ассистентом (помесячно)',
+          style: TextStyle(
+              fontWeight: FontWeight.w600, fontSize: 14, color: Colors.grey),
+        ),
+        const SizedBox(height: 8),
+        _buildPricingCard(
+          'С AI Ассистентом',
+          '499 ₽',
+          'в месяц + безлимит AI',
+          true,
+          499,
+          isAssistant: true,
         ),
         const SizedBox(height: 16),
         const Text(
@@ -222,8 +239,16 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
   }
 
   Widget _buildPricingCard(
-      String title, String price, String subtitle, bool isPopular, int amount) {
+      String title, String price, String subtitle, bool isPopular, int amount, {
+        bool isBasic = false,
+        bool isAssistant = false,
+      }) {
     final isSelected = _selectedPlan == title;
+    final cardColor = isAssistant 
+        ? Colors.cyan.withOpacity(0.1) 
+        : isBasic 
+            ? Colors.grey.withOpacity(0.1)
+            : null;
 
     return GestureDetector(
       onTap: () => setState(() => _selectedPlan = title),
@@ -232,13 +257,15 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         decoration: BoxDecoration(
           color: isSelected
               ? Theme.of(context).colorScheme.primaryContainer
-              : Theme.of(context).colorScheme.surface,
+              : cardColor ?? Theme.of(context).colorScheme.surface,
           borderRadius: BorderRadius.circular(16),
           border: Border.all(
-            color: isSelected
-                ? Theme.of(context).colorScheme.primary
-                : Theme.of(context).colorScheme.outline.withOpacity(0.2),
-            width: isSelected ? 2 : 1,
+            color: isAssistant 
+                ? Colors.cyan 
+                : isSelected
+                    ? Theme.of(context).colorScheme.primary
+                    : Theme.of(context).colorScheme.outline.withOpacity(0.2),
+            width: isSelected || isAssistant ? 2 : 1,
           ),
         ),
         child: Column(
@@ -247,15 +274,33 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: Colors.amber.withOpacity(0.2),
+                  color: isAssistant 
+                      ? Colors.cyan.withOpacity(0.2)
+                      : Colors.amber.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(8),
                 ),
-                child: const Text(
-                  'Выгодно',
+                child: Text(
+                  isAssistant ? 'AI включён' : 'Выгодно',
                   style: TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
-                    color: Colors.amber,
+                    color: isAssistant ? Colors.cyan : Colors.amber,
+                  ),
+                ),
+              ),
+            if (isBasic)
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                decoration: BoxDecoration(
+                  color: Colors.grey.withOpacity(0.2),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Text(
+                  'Без AI',
+                  style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.grey,
                   ),
                 ),
               ),
@@ -271,7 +316,9 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
               price,
               style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                     fontWeight: FontWeight.bold,
-                    color: Theme.of(context).colorScheme.primary,
+                    color: isAssistant 
+                        ? Colors.cyan 
+                        : Theme.of(context).colorScheme.primary,
                   ),
             ),
             Text(
@@ -391,10 +438,20 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
     // Получаем сумму и описание в зависимости от выбранного плана
     int amount;
     String description;
+    bool withAI = false;
     switch (_selectedPlan) {
-      case 'Месяц':
-        amount = _monthlyPrice;
-        description = 'Подписка на 1 месяц';
+      case 'Базовый Месяц':
+        amount = 199;
+        description = 'Базовый тариф (уроки) - 1 месяц';
+        break;
+      case 'Базовый Год':
+        amount = 1490;
+        description = 'Базовый тариф (уроки) - 1 год';
+        break;
+      case 'С AI Ассистентом':
+        amount = 499;
+        description = 'Тариф с AI Ассистентом - 1 месяц';
+        withAI = true;
         break;
       case 'Год':
         amount = _yearlyPrice;
@@ -420,10 +477,39 @@ class _SubscriptionScreenState extends State<SubscriptionScreen> {
         description: description,
       );
 
+      // Для демонстрации - сразу активируем подписку
+      // В реальном приложении это будет делаться после webhook от YooKassa
+      if (redirectUrl != null) {
+        final service = SubscriptionService();
+        
+        int months = 1;
+        if (_selectedPlan == 'Базовый Год' || _selectedPlan == 'Год') {
+          months = 12;
+        }
+        
+        await service.subscribe(
+          months: months,
+          paymentMethodId: 'demo',
+          withAI: withAI,
+        );
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(
+                withAI 
+                  ? 'Подписка с AI Ассистентом активирована!'
+                  : 'Подписка активирована!',
+              ),
+              backgroundColor: Colors.green,
+            ),
+          );
+          setState(() {});
+        }
+      }
+
       if (redirectUrl != null && await canLaunchUrl(Uri.parse(redirectUrl))) {
         await launchUrl(Uri.parse(redirectUrl), webOnlyWindowName: '_blank');
-      } else {
-        throw Exception('Не удалось запустить URL');
       }
     } catch (e) {
       if (mounted) {

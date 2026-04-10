@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
+import 'firebase_service.dart';
 
 class GroqChatService {
   static final GroqChatService _instance = GroqChatService._internal();
@@ -23,6 +24,7 @@ class GroqChatService {
 
   // Лимиты
   static const int _dailyLimit = 50; // 50 сообщений в день бесплатно
+  static const int _unlimitedLimit = 999999; // Безлимит для подписчиков с AI
   static const String _systemPrompt = '''Ты — дружелюбный учитель для детей 10-14 лет.
 Твои правила:
 1. Используй простые слова, понятные детям
@@ -44,12 +46,16 @@ class GroqChatService {
 
   bool get canSendMessage {
     _checkDailyReset();
-    return _messageCountToday < _dailyLimit;
+    final hasAI = SubscriptionService().getSubscriptionInfo()['hasAIAssistant'] as bool? ?? false;
+    final effectiveLimit = hasAI ? _unlimitedLimit : _dailyLimit;
+    return _messageCountToday < effectiveLimit;
   }
 
   int get remainingMessages {
     _checkDailyReset();
-    return _dailyLimit - _messageCountToday;
+    final hasAI = SubscriptionService().getSubscriptionInfo()['hasAIAssistant'] as bool? ?? false;
+    final effectiveLimit = hasAI ? _unlimitedLimit : _dailyLimit;
+    return effectiveLimit - _messageCountToday;
   }
 
   String getLimitMessage() {
@@ -59,6 +65,10 @@ class GroqChatService {
 
   String getRemainingMessage() {
     _checkDailyReset();
+    final hasAI = SubscriptionService().getSubscriptionInfo()['hasAIAssistant'] as bool? ?? false;
+    if (hasAI) {
+      return 'Безлимитные сообщения включены!';
+    }
     return 'Осталось: $remainingMessages сообщений на сегодня. Купи подписку для безлимитного общения!';
   }
 
