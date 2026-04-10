@@ -6,27 +6,21 @@ on:
       - main
 
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    
     steps:
       - uses: actions/checkout@v4
-
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.16.3'
-          channel: 'stable'
-
       - run: flutter config --enable-web
       - run: flutter pub get
       - run: flutter build web --release --web-renderer html
-
-      - name: Deploy
-        uses: JamesIves/github-pages-deploy-action@v4.6.0
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          folder: build/web
-          branch: gh-pages
-          single-commit: true
+      - run: |
+          cd build/web
+          git init
+          git config user.name "Deploy"
+          git config user.email "deploy@github.com"
+          git add -A
+          git commit -m "Deploy" --allow-empty || true
+          git push -f https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git HEAD:gh-pages
