@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'subscription_screen.dart';
 import '../data/services/chat_service.dart';
 import '../data/services/gamification_service.dart';
@@ -396,6 +397,14 @@ class ParentDashboardScreen extends StatelessWidget {
       child: Column(
         children: [
           ListTile(
+            leading: const Icon(Icons.security),
+            title: const Text('Правила безопасности'),
+            subtitle: const Text('Просмотреть для родителей'),
+            trailing: const Icon(Icons.open_in_new),
+            onTap: () => _openSafetyRules(context),
+          ),
+          const Divider(height: 1),
+          ListTile(
             leading: const Icon(Icons.timer),
             title: const Text('Ограничение времени'),
             subtitle: const Text('Не установлено'),
@@ -572,6 +581,19 @@ class ParentDashboardScreen extends StatelessWidget {
         ],
       ),
     );
+  }
+
+  Future<void> _openSafetyRules(BuildContext context) async {
+    final url = Uri.parse('https://serbel82-wq.github.io/new-neuro-explorer/docs/Правила_безопасности_для_родителей.html');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    } else {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Не удалось открыть правила безопасности')),
+        );
+      }
+    }
   }
 
   IconData _getSeasonIcon(String iconName) {

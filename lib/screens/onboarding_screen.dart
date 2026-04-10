@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../app_routes.dart';
 
@@ -30,7 +31,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     const OnboardingPage(
       icon: Icons.security,
       title: 'Правила безопасности',
-      description: 'Важно помнить несколько простых правил, чтобы оставаться в безопасности',
+      description: 'Важно помнить несколько простых правил, чтобы оставаться в безопасности. Ознакомьтесь с полными правилами безопасности перед началом обучения.',
       color: Colors.orange,
       subtitle: 'Безопасность прежде всего',
       bulletPoints: [
@@ -39,6 +40,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
         'Не отправляй свои фотографии незнакомцам',
         'Если что-то смутит — расскажи родителям',
       ],
+      hasLink: true,
     ),
     const OnboardingPage(
       icon: Icons.lightbulb,
@@ -81,6 +83,13 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
       AppRoutes.levels,
       arguments: widget.userName,
     );
+  }
+
+  Future<void> _openSafetyRules() async {
+    final url = Uri.parse('https://serbel82-wq.github.io/new-neuro-explorer/docs/Правила_безопасности_для_родителей.html');
+    if (await canLaunchUrl(url)) {
+      await launchUrl(url, mode: LaunchMode.externalApplication);
+    }
   }
 
   @override
@@ -249,6 +258,14 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
               ),
             )),
           ],
+          if (page.hasLink) ...[
+            const SizedBox(height: 24),
+            OutlinedButton.icon(
+              onPressed: () => _openSafetyRules(),
+              icon: const Icon(Icons.open_in_new),
+              label: const Text('Открыть полные правила безопасности'),
+            ),
+          ],
         ],
       ),
     );
@@ -283,6 +300,7 @@ class OnboardingPage {
   final String subtitle;
   final Color color;
   final List<String>? bulletPoints;
+  final bool hasLink;
 
   const OnboardingPage({
     required this.icon,
@@ -291,5 +309,6 @@ class OnboardingPage {
     required this.subtitle,
     required this.color,
     this.bulletPoints,
+    this.hasLink = false,
   });
 }
