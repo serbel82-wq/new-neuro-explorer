@@ -1,9 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:flutter/foundation.dart' show kIsWeb, debugPrint;
 
-import 'firebase_options.dart';
 import 'app_routes.dart';
 import 'screens/levels_tree_screen.dart';
 import 'screens/welcome_screen.dart';
@@ -14,31 +11,10 @@ import 'screens/avatar_selection_screen.dart';
 import 'screens/parent_dashboard_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/subscription_screen.dart';
-import 'data/services/storage_service.dart';
-import 'data/services/gamification_service.dart';
-import 'data/services/firebase_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Для веб-версии пропускаем Firebase
-  if (!kIsWeb) {
-    try {
-      await Firebase.initializeApp(
-          options: DefaultFirebaseOptions.currentPlatform);
-      debugPrint('Firebase initialized successfully');
-    } catch (e) {
-      debugPrint('Firebase initialization skipped: $e');
-    }
-  }
-
-  try {
-    await StorageService.init();
-    await GamificationService.init();
-  } catch (e) {
-    debugPrint('Service initialization error: $e');
-  }
-  
   runApp(const NeuroApp());
 }
 
