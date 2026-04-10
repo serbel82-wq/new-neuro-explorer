@@ -4,28 +4,24 @@ on:
   push:
     branches:
       - main
-  workflow_dispatch:
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.24.0'
 
-      - name: Clear cache
-        run: rm -rf ~/.pub-cache build/
-
       - run: flutter config --enable-web
+
       - run: flutter pub get
+
       - run: flutter build web --release --web-renderer html
+
+      - run: ls -la build/web/
 
       - uses: peaceiris/actions-gh-pages@v3
         with:
