@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart' as firebase_auth;
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import '../../firebase_options.dart';
 
 enum AuthStatus {
@@ -385,11 +386,12 @@ class SubscriptionService {
   factory SubscriptionService() => _instance;
   SubscriptionService._internal();
 
+  static const String _trialUsedKey = 'trial_used';
   static const int trialDays = 7;
   static const int monthlyPriceRubles = 990;
   static const int yearlyPriceRubles = 7990;
 
-  bool _isTrialActive = true;
+  bool _isTrialActive = false;
   bool _isSubscribed = false;
   bool _hasAIAssistant = false;
   DateTime? _subscriptionEnd;
@@ -399,8 +401,20 @@ class SubscriptionService {
   bool get hasAIAssistant => _hasAIAssistant;
   DateTime? get subscriptionEnd => _subscriptionEnd;
 
+  Future<void> init() async {
+    final prefs = await SharedPreferences.getInstance();
+    _isTrialActive = !(prefs.getBool(_trialUsedKey) ?? false);
+  }
+
   Future<bool> activateTrial() async {
-    await Future.delayed(const Duration(milliseconds: 500));
+    final prefs = await SharedPreferences.getInstance();
+    final alreadyUsed = prefs.getBool(_trialUsedKey) ?? false;
+    
+    if (alreadyUsed) {
+      return false;
+    }
+    
+    await prefs.setBool(_trialUsedKey, true);
     _isTrialActive = true;
     _subscriptionEnd = DateTime.now().add(Duration(days: trialDays));
     return true;

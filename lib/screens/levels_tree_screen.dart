@@ -11,6 +11,7 @@ import '../data/models/lesson.dart';
 import '../data/services/storage_service.dart';
 import '../data/services/lesson_data_provider.dart';
 import '../data/services/gamification_service.dart';
+import '../data/services/firebase_service.dart';
 import '../widgets/gamification_widgets.dart';
 import '../widgets/premium_animations.dart';
 import '../app_routes.dart';
@@ -74,6 +75,13 @@ class _LevelsTreeScreenState extends State<LevelsTreeScreen> {
   }
 
   void _loadData() {
+    final subscriptionInfo = SubscriptionService().getSubscriptionInfo();
+    final isSubscribed = subscriptionInfo['isSubscribed'] as bool? ?? false;
+    final hasAI = subscriptionInfo['hasAIAssistant'] as bool? ?? false;
+    final isTrialActive = subscriptionInfo['isTrialActive'] as bool? ?? true;
+    
+    final freeSeasonLimit = (isSubscribed || isTrialActive) ? 8 : 2;
+    
     setState(() {
       _seasons = LessonDataProvider.getSeasons();
       _currentSeasonLessons = LessonDataProvider.getSeason1Lessons();
@@ -85,10 +93,13 @@ class _LevelsTreeScreenState extends State<LevelsTreeScreen> {
         final totalLessons = season.id == 1 ? 8 : 6;
         final progress = totalLessons > 0 ? completedCount / totalLessons : 0.0;
 
-        bool isUnlocked = season.id == 1;
-        if (season.id == 2 && _seasons.isNotEmpty) {
-          final season1Progress = _seasons[0].progress;
-          isUnlocked = season1Progress >= 1.0;
+        bool isUnlocked = season.id <= freeSeasonLimit;
+        if (season.id > 1) {
+          final prevSeasonIndex = season.id - 2;
+          if (prevSeasonIndex < _seasons.length) {
+            final prevSeason = _seasons[prevSeasonIndex];
+            isUnlocked = prevSeason.progress >= 1.0 && season.id <= freeSeasonLimit;
+          }
         }
 
         return season.copyWith(
