@@ -475,6 +475,7 @@ class _LevelsTreeScreenState extends State<LevelsTreeScreen> {
     );
   }
 
+  // AI Assistant button
   Widget _buildHeaderButtons(Color seasonColor) {
     return Row(
       mainAxisSize: MainAxisSize.min,
