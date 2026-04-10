@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
-import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_core/firebase_core.dart' show FirebaseOptions, kIsWeb;
+import 'package:flutter/foundation.dart' show debugPrint;
 
 import 'firebase_options.dart';
 import 'app_routes.dart';
@@ -20,20 +21,20 @@ import 'data/services/firebase_service.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Инициализация Firebase с опциями
-  try {
-    await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform);
-    debugPrint('Firebase initialized successfully');
-  } catch (e) {
-    debugPrint('Firebase initialization failed: $e');
+  // Для веб-версии пропускаем Firebase
+  if (!kIsWeb) {
+    try {
+      await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform);
+      debugPrint('Firebase initialized successfully');
+    } catch (e) {
+      debugPrint('Firebase initialization skipped: $e');
+    }
   }
 
   try {
     await StorageService.init();
     await GamificationService.init();
-    await AuthService().initialize();
-    await FirebaseService().initialize();
   } catch (e) {
     debugPrint('Service initialization error: $e');
   }
