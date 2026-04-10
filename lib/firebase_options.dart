@@ -40,7 +40,7 @@ class DefaultFirebaseOptions {
 
   /// Конфигурация для Web
   static const FirebaseOptions web = FirebaseOptions(
-    apiKey: 'AIzaSyBKvIAEeP0JwvR55FFKLCOHzZqo_-cXLOg',
+    apiKey: 'AIzaSyAV2nYBc6vWlfyF3Z2hqp5Ok8VFpRLBx60',
     appId: '1:154388028243:web:3090902a53037d5e9e1fa6',
     messagingSenderId: '154388028243',
     projectId: 'gen-lang-client-0447894603',
