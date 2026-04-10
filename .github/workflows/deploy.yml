@@ -27,8 +27,14 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Remove cached build
+        run: rm -rf build/ || true
+
       - name: Build web release
         run: flutter build web --release --web-renderer html
+
+      - name: Verify build
+        run: ls -la build/web/ && test -f build/web/main.dart.js
 
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@v4
