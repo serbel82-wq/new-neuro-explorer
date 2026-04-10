@@ -14,10 +14,6 @@ class AIAssistantWidget extends StatefulWidget {
     this.onMinimize,
     this.onSubscribe,
   });
-    this.childName,
-    this.assistantName,
-    this.onMinimize,
-  });
 
   @override
   State<AIAssistantWidget> createState() => _AIAssistantWidgetState();
@@ -269,7 +265,6 @@ class _AIAssistantWidgetState extends State<AIAssistantWidget> {
                       _groqService.canSendMessage ? 'Купить подписку' : 'Купить',
                       style: TextStyle(fontSize: 10, color: Colors.deepPurple),
                     ),
-                  ),
                   ),
                 ],
               ),
