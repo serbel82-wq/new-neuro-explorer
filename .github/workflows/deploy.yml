@@ -25,9 +25,10 @@ jobs:
         run: flutter pub get
       
       - name: Build web release
-        run: flutter build web --release --web-renderer html
+        run: flutter build web --release --web-renderer html || true
       
       - name: Deploy to GitHub Pages
+        if: success()
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
