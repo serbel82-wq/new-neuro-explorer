@@ -27,11 +27,20 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      - name: Clean any previous builds
+        run: rm -rf build/ || true
+
       - name: Build web release
         run: flutter build web --release --web-renderer html
 
       - name: List build output
-        run: ls -la build/web/ | head -20
+        run: |
+          echo "=== Build output ==="
+          ls -la build/web/
+          echo "=== File sizes ==="
+          du -sh build/web/*
+          echo "=== main.dart.js size ==="
+          ls -la build/web/main.dart.js
 
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v4
