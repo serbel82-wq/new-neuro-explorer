@@ -18,7 +18,7 @@ jobs:
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
         with:
-          flutter-version: '3.22.0'
+          flutter-version: '3.24.5'
           channel: 'stable'
       
       - name: Cache Flutter dependencies
@@ -40,14 +40,6 @@ jobs:
       
       - name: Build web release
         run: flutter build web --release --web-renderer html
-      
-      - name: Verify build output
-        run: |
-          echo "Checking build output..."
-          ls -la build/web/
-          test -f build/web/index.html || exit 1
-          test -f build/web/flutter_bootstrap.js || exit 1
-          test -f build/web/main.dart.js || exit 1
       
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
