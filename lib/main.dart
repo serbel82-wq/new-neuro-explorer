@@ -21,7 +21,6 @@ void main() async {
 /// Главное приложение НейроИсследователь
 class NeuroApp extends StatelessWidget {
   const NeuroApp({super.key});
-  const NeuroApp({super.key});
 
   @override
   Widget build(BuildContext context) {
