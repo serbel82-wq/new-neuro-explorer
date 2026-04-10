@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
+import 'package:firebase_core/firebase_core.dart';
 
+import 'firebase_options.dart';
 import 'app_routes.dart';
 import 'screens/levels_tree_screen.dart';
 import 'screens/welcome_screen.dart';
@@ -11,14 +13,32 @@ import 'screens/avatar_selection_screen.dart';
 import 'screens/parent_dashboard_screen.dart';
 import 'screens/auth_screen.dart';
 import 'screens/subscription_screen.dart';
+import 'data/services/storage_service.dart';
+import 'data/services/gamification_service.dart';
+import 'data/services/firebase_service.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Инициализация Firebase с опциями
+  try {
+    await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform);
+  } catch (e) {
+    debugPrint('Firebase initialization skipped (not configured): $e');
+  }
+
+  await StorageService.init();
+  await GamificationService.init();
+  await AuthService().initialize();
+  await FirebaseService().initialize();
   runApp(const NeuroApp());
 }
 
-/// Главное приложение НейроИсследователь
+/// Корневое приложение: тема, локаль, именованные маршруты.
+///
+/// Для [TextField] и виджетов Material на веб нужны [localizationsDelegates]
+/// (иначе — «No MaterialLocalizations found»).
 class NeuroApp extends StatelessWidget {
   const NeuroApp({super.key});
 
@@ -47,7 +67,7 @@ class NeuroApp extends StatelessWidget {
           centerTitle: true,
           elevation: 0,
         ),
-        cardTheme: CardTheme(
+        cardTheme: CardThemeData(
           elevation: 2,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
