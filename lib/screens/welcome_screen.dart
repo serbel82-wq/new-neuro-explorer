@@ -307,6 +307,82 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     );
   }
 
+  Widget _buildParentToggle(BuildContext context) {
+    return GestureDetector(
+      onTap: () {
+        setState(() {
+          _isParentMode = !_isParentMode;
+        });
+        if (_isParentMode) {
+          _onParentStart();
+        }
+      },
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+        decoration: BoxDecoration(
+          color: _isParentMode
+              ? Theme.of(context).colorScheme.primaryContainer
+              : Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+            color: _isParentMode
+                ? Theme.of(context).colorScheme.primary
+                : Theme.of(context).colorScheme.outline.withOpacity(0.3),
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              _isParentMode ? Icons.family_restroom : Icons.person,
+              size: 18,
+              color: _isParentMode
+                  ? Theme.of(context).colorScheme.onPrimaryContainer
+                  : Theme.of(context).colorScheme.onSurfaceVariant,
+            ),
+            const SizedBox(width: 8),
+            Text(
+              _isParentMode ? 'Родитель' : 'Я - родитель',
+              style: TextStyle(
+                fontSize: 13,
+                color: _isParentMode
+                    ? Theme.of(context).colorScheme.onPrimaryContainer
+                    : Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReferralButton(BuildContext context) {
+    return TextButton.icon(
+      onPressed: () {
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('Реферальная программа'),
+            content: const Text(
+              'Пригласи друга и получи бонусы! '
+              'Поделись своим кодом приглашения с другом, '
+              'и вы оба получите бесплатный доступ к сезону.',
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(context),
+                child: const Text('Понятно'),
+              ),
+            ],
+          ),
+        );
+      },
+      icon: const Icon(Icons.card_giftcard, size: 18),
+      label: const Text('Пригласить друга'),
+    );
+  }
+
   Widget _buildSeasonInfo(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
 
