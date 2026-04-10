@@ -6,41 +6,27 @@ on:
       - main
 
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     permissions:
       contents: write
     
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.16.3'
           channel: 'stable'
 
-      - name: Enable web support
-        run: flutter config --enable-web
+      - run: flutter config --enable-web
+      - run: flutter pub get
+      - run: flutter build web --release --web-renderer html
 
-      - name: Install dependencies
-        run: flutter pub get
-
-      - name: Remove cached build
-        run: rm -rf build/ || true
-
-      - name: Build web release
-        run: flutter build web --release --web-renderer html
-
-      - name: Verify build
-        run: ls -la build/web/ && test -f build/web/main.dart.js
-
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Deploy
+        uses: JamesIves/github-pages-deploy-action@v4.6.0
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           folder: build/web
           branch: gh-pages
           single-commit: true
-          clean: true
