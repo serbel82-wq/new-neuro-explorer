@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'subscription_screen.dart';
 import '../data/services/chat_service.dart';
 import '../data/services/gamification_service.dart';
@@ -8,7 +9,20 @@ import '../data/services/lesson_data_provider.dart';
 class ParentDashboardScreen extends StatelessWidget {
   const ParentDashboardScreen({super.key});
 
-  @override
+  static SharedPreferences? _prefs;
+  static SharedPreferences get prefs => _prefs!;
+
+  static Future<void> init() async {
+    _prefs ??= await SharedPreferences.getInstance();
+  }
+
+  String _getTimeLimitText() {
+    if (_prefs == null) return 'Не установлено';
+    final minutes = _prefs!.getInt(_timeLimitKey) ?? 0;
+    if (minutes == 0) return 'Без ограничений';
+    if (minutes < 60) return '$minutes минут';
+    return '${minutes ~/ 60} час${minutes >= 120 ? 'а' : ''}';
+  }
   Widget build(BuildContext context) {
     final profile = GamificationService.getProfile();
     final stats = GamificationService.getGamificationStats();
@@ -45,6 +59,10 @@ class ParentDashboardScreen extends StatelessWidget {
               _buildSectionTitle(context, 'Прогресс ребёнка'),
               const SizedBox(height: 12),
               _buildProgressCard(context, stats, completedLessons),
+              const SizedBox(height: 24),
+              _buildSectionTitle(context, 'Звёзды'),
+              const SizedBox(height: 12),
+              _buildStarsCard(context, stats, seasons),
               const SizedBox(height: 24),
               _buildSectionTitle(context, 'Любознательность ребёнка'),
               const SizedBox(height: 12),
@@ -237,6 +255,95 @@ class ParentDashboardScreen extends StatelessWidget {
     );
   }
 
+  Widget _buildStarsCard(
+      BuildContext context, Map<String, dynamic> stats, List seasons) {
+    final totalStars = stats['totalStars'] as int? ?? 0;
+    final seasonStars = stats['seasonStars'] as Map<String, dynamic>? ?? {};
+
+    return Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(Icons.stars, color: Colors.amber, size: 32),
+                ),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '$totalStars звёзд собрано',
+                        style:
+                            Theme.of(context).textTheme.titleMedium?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                      ),
+                      Text(
+                        'За прохождение уроков',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            const Divider(),
+            const SizedBox(height: 8),
+            Text(
+              'Звёзды по сезонам',
+              style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 12,
+              runSpacing: 8,
+              children: seasons.take(8).map((season) {
+                final stars = seasonStars[season.id.toString()] as int? ?? 0;
+                return Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                      color: Colors.amber.withOpacity(0.3),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Icon(Icons.star, color: Colors.amber, size: 18),
+                      const SizedBox(width: 4),
+                      Text(
+                        'S${season.id}: $stars',
+                        style: const TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber,
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   Widget _buildAchievementsCard(BuildContext context,
       List<Achievement> unlocked, Map<String, dynamic> stats) {
     final total = stats['totalAchievements'] as int;
@@ -407,7 +514,7 @@ class ParentDashboardScreen extends StatelessWidget {
           ListTile(
             leading: const Icon(Icons.timer),
             title: const Text('Ограничение времени'),
-            subtitle: const Text('Не установлено'),
+            subtitle: Text(_getTimeLimitText()),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => _showTimeLimitDialog(context),
           ),
@@ -436,39 +543,79 @@ class ParentDashboardScreen extends StatelessWidget {
     );
   }
 
+  static const String _timeLimitKey = 'parent_time_limit_minutes';
+  static const String _notificationsEnabledKey = 'parent_notifications';
+  static const String _emailReportsKey = 'parent_email_reports';
+
+  String _getTimeLimitText() {
+    if (_prefs == null) return 'Не установлено';
+    final minutes = _prefs!.getInt(_timeLimitKey) ?? 0;
+    if (minutes == 0) return 'Без ограничений';
+    if (minutes < 60) return '$minutes минут';
+    return '${minutes ~/ 60} час${minutes >= 120 ? 'а' : ''}';
+  }
+
+  Future<void> _saveTimeLimit(int minutes) async {
+    await init();
+    await _prefs!.setInt(_timeLimitKey, minutes);
+  }
+
   void _showTimeLimitDialog(BuildContext context) {
+    if (_prefs == null) {
+      init().then((_) => _showTimeLimitDialog(context));
+      return;
+    }
+    final currentLimit = _prefs!.getInt(_timeLimitKey) ?? 0;
+    
+    final options = [
+      {'label': 'Без ограничений', 'minutes': 0},
+      {'label': '15 минут', 'minutes': 15},
+      {'label': '30 минут', 'minutes': 30},
+      {'label': '1 час', 'minutes': 60},
+      {'label': '2 часа', 'minutes': 120},
+    ];
+
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Ограничение времени'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('Установите дневной лимит времени для ребёнка:'),
-            const SizedBox(height: 16),
-            Wrap(
-              spacing: 8,
-              children: [
-                'Без ограничений', '15 минут', '30 минут', '1 час', '2 часа'
-              ].map((option) => ChoiceChip(
-                label: Text(option),
-                selected: false,
-                onSelected: (selected) {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text('Установлено: $option')),
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: const Text('Ограничение времени'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text('Текущее: ${_getTimeLimitText()}'),
+              const SizedBox(height: 16),
+              const Text('Установите дневной лимит времени для ребёнка:'),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: options.map((opt) {
+                  final isSelected = (opt['minutes'] as int) == currentLimit;
+                  return ChoiceChip(
+                    label: Text(opt['label'] as String),
+                    selected: isSelected,
+                    onSelected: (selected) async {
+                      await _saveTimeLimit(opt['minutes'] as int);
+                      if (context.mounted) {
+                        Navigator.pop(context);
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Установлено: ${opt['label']}')),
+                        );
+                      }
+                    },
                   );
-                },
-              )).toList(),
+                }).toList(),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Отмена'),
             ),
           ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context),
-            child: const Text('Отмена'),
-          ),
-        ],
       ),
     );
   }

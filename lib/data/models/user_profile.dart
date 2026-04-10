@@ -9,6 +9,8 @@ class UserProfile {
   final int longestStreak;
   final DateTime? lastLoginDate;
   final int totalXpEarned;
+  final int totalStars; // Звёзды за уроки
+  final Map<int, int> seasonStars; // Звёзды по сезонам (seasonId -> stars)
 
   UserProfile({
     required this.name,
@@ -21,7 +23,9 @@ class UserProfile {
     this.longestStreak = 0,
     this.lastLoginDate,
     this.totalXpEarned = 0,
-  });
+    this.totalStars = 0,
+    Map<int, int>? seasonStars,
+  }) : seasonStars = seasonStars ?? {};
 
   UserProfile copyWith({
     String? name,
@@ -34,6 +38,8 @@ class UserProfile {
     int? longestStreak,
     DateTime? lastLoginDate,
     int? totalXpEarned,
+    int? totalStars,
+    Map<int, int>? seasonStars,
   }) {
     return UserProfile(
       name: name ?? this.name,
@@ -47,6 +53,8 @@ class UserProfile {
       longestStreak: longestStreak ?? this.longestStreak,
       lastLoginDate: lastLoginDate ?? this.lastLoginDate,
       totalXpEarned: totalXpEarned ?? this.totalXpEarned,
+      totalStars: totalStars ?? this.totalStars,
+      seasonStars: seasonStars ?? this.seasonStars,
     );
   }
 

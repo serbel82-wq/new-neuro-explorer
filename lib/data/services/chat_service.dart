@@ -14,6 +14,10 @@ class ChatService {
   Map<String, List<Map<String, dynamic>>> _conversations = {};
   Map<String, List<Map<String, dynamic>>> _offlineMessages = {};
 
+  // Лимиты сообщений AI чата
+  static const int freeDailyLimit = 10; // Бесплатный лимит в день
+  static const int premiumDailyLimit = 100; // Премиум лимит (безлимитный по сути)
+  
   // История сообщений для AI чата
   List<Map<String, dynamic>> _aiChatHistory = [
     // Демонстрационные данные для родительского кабинета
@@ -24,6 +28,20 @@ class ChatService {
     {'role': 'user', 'content': 'Может ли ИИ написать музыку?'},
   ];
   bool _isFirebaseConfigured = false;
+
+  // Слова для модерации (заблокированные темы для детей)
+  static const List<String> _blockedWords = [
+    'оружие', 'убийство', 'наркотики', 'алкоголь', 'сигареты',
+    'суицид', 'самоубийство', 'насилие', 'порно', 'секс',
+    'обман', 'мошенничество', 'кража', 'взлом', 'террор',
+  ];
+
+  // Проверенные темы для детей
+  static const List<String> _allowedTopics = [
+    'нейросеть', 'искусственный интеллект', 'программирование',
+    'музыка', 'рисование', 'математика', 'школа', 'учёба',
+    'игры', 'спорт', 'наука', 'технологии', 'робот',
+  ];
 
   // URL Firebase Functions - замените на ваш проект
   static const String _functionsBaseUrl =
@@ -44,6 +62,68 @@ class ChatService {
   /// Возвращает историю диалога с AI для отображения в родительском кабинете.
   List<Map<String, dynamic>> getAiChatHistory() {
     return _aiChatHistory;
+  }
+
+  /// Проверка лимита сообщений на сегодня
+  static bool checkMessageLimit({required bool isPremium}) {
+    // В реальном приложении - получить из SharedPreferences
+    // Здесь заглушка
+    return true;
+  }
+
+  /// Получить количество оставшихся сообщений на сегодня
+  static int getRemainingMessages({required bool isPremium}) {
+    final limit = isPremium ? premiumDailyLimit : freeDailyLimit;
+    // В реальном приложении - получить из SharedPreferences
+    // Здесь возвращаем примерное значение
+    return limit - 3; // Демо: 3 уже использовано
+  }
+
+  /// Проверка контента на безопасность
+  static Map<String, dynamic> checkContentSafety(String message) {
+    final lowerMessage = message.toLowerCase();
+    
+    // Проверка на заблокированные слова
+    for (final blockedWord in _blockedWords) {
+      if (lowerMessage.contains(blockedWord)) {
+        return {
+          'isSafe': false,
+          'reason': 'Содержимое не подходит для детей',
+          'suggestion': 'Давай поговорим на другую тему? Я могу помочь с учёбой, творчеством или интересными фактами о технологиях!',
+        };
+      }
+    }
+    
+    // Проверка длины сообщения
+    if (message.length > 2000) {
+      return {
+        'isSafe': false,
+        'reason': 'Сообщение слишком длинное',
+        'suggestion': 'Попробуй разбить сообщение на несколько частей',
+      };
+    }
+    
+    return {'isSafe': true};
+  }
+
+  /// Проверка, является ли пользователь премиум
+  bool isUserPremium() {
+    // В реальном приложении - проверка подписки из Firebase/Storage
+    return false; // Для демо - бесплатный пользователь
+  }
+
+  /// Увеличить счётчик сообщений
+  Future<void> incrementMessageCount() async {
+    // В реальном приложении - сохранение в SharedPreferences
+    // SharedPreferences prefs = await SharedPreferences.getInstance();
+    // int count = prefs.getInt('daily_message_count') ?? 0;
+    // await prefs.setInt('daily_message_count', count + 1);
+  }
+
+  /// Сбросить счётчик (вызывать в полночь)
+  Future<void> resetDailyCount() async {
+    // SharedPreferences prefs = await SharedPreferences.getInstance();
+    // await prefs.setInt('daily_message_count', 0);
   }
 
   String generateUserId(String name) {

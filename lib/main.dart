@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'firebase_options.dart';
 import 'app_routes.dart';
@@ -17,30 +18,44 @@ import 'data/services/storage_service.dart';
 import 'data/services/gamification_service.dart';
 import 'data/services/firebase_service.dart';
 
-void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
+class NeuroApp extends StatefulWidget {
+  const NeuroApp({super.key});
 
-  // Инициализация Firebase с опциями
-  try {
-    await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform);
-  } catch (e) {
-    debugPrint('Firebase initialization skipped (not configured): $e');
-  }
-
-  await StorageService.init();
-  await GamificationService.init();
-  await AuthService().initialize();
-  await FirebaseService().initialize();
-  runApp(const NeuroApp());
+  @override
+  State<NeuroApp> createState() => _NeuroAppState();
 }
 
-/// Корневое приложение: тема, локаль, именованные маршруты.
-///
-/// Для [TextField] и виджетов Material на веб нужны [localizationsDelegates]
-/// (иначе — «No MaterialLocalizations found»).
-class NeuroApp extends StatelessWidget {
-  const NeuroApp({super.key});
+class _NeuroAppState extends State<NeuroApp> {
+  ThemeMode _themeMode = ThemeMode.light;
+  static const String _themeKey = 'theme_mode';
+
+  static Future<void> toggleTheme(BuildContext context) async {
+    final state = context.findAncestorStateOfType<_NeuroAppState>();
+    await state?._toggleTheme();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _loadTheme();
+  }
+
+  Future<void> _loadTheme() async {
+    final prefs = await SharedPreferences.getInstance();
+    final isDark = prefs.getBool(_themeKey) ?? false;
+    setState(() {
+      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
+
+  Future<void> _toggleTheme() async {
+    final isDark = _themeMode == ThemeMode.light;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_themeKey, isDark);
+    setState(() {
+      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -56,6 +71,7 @@ class NeuroApp extends StatelessWidget {
         GlobalWidgetsLocalizations.delegate,
         GlobalCupertinoLocalizations.delegate,
       ],
+      themeMode: _themeMode,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: Colors.deepPurple,
@@ -63,6 +79,32 @@ class NeuroApp extends StatelessWidget {
         ),
         useMaterial3: true,
         scaffoldBackgroundColor: const Color(0xFFF5F5F5),
+        appBarTheme: const AppBarTheme(
+          centerTitle: true,
+          elevation: 0,
+        ),
+        cardTheme: CardTheme(
+          elevation: 2,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+        ),
+        filledButtonTheme: FilledButtonThemeData(
+          style: FilledButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(12),
+            ),
+          ),
+        ),
+      ),
+      darkTheme: ThemeData(
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: Colors.deepPurple,
+          brightness: Brightness.dark,
+        ),
+        useMaterial3: true,
+        scaffoldBackgroundColor: const Color(0xFF121212),
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
@@ -119,7 +161,10 @@ class NeuroApp extends StatelessWidget {
             );
           case AppRoutes.parentDashboard:
             return MaterialPageRoute<void>(
-              builder: (_) => const ParentDashboardScreen(),
+              builder: (_) => FutureBuilder(
+                future: ParentDashboardScreen.init(),
+                builder: (context, snapshot) => const ParentDashboardScreen(),
+              ),
               settings: settings,
             );
           case AppRoutes.auth:
@@ -139,6 +184,32 @@ class NeuroApp extends StatelessWidget {
             );
         }
       },
+      builder: (context, child) {
+        // Добавляем кнопку переключения темы для отладки/тестирования
+        return ThemeToggleWidget(
+          themeMode: _themeMode,
+          onToggle: _toggleTheme,
+          child: child ?? const SizedBox.shrink(),
+        );
+      },
     );
+  }
+}
+
+class ThemeToggleWidget extends StatelessWidget {
+  final ThemeMode themeMode;
+  final VoidCallback onToggle;
+  final Widget child;
+
+  const ThemeToggleWidget({
+    super.key,
+    required this.themeMode,
+    required this.onToggle,
+    required this.child,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return child;
   }
 }

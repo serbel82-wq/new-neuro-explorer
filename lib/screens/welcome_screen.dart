@@ -4,6 +4,7 @@ import '../screens/onboarding_screen.dart';
 import '../screens/auth_screen.dart';
 import '../data/services/storage_service.dart';
 import '../widgets/premium_animations.dart';
+import '../main.dart';
 
 class WelcomeScreen extends StatefulWidget {
   const WelcomeScreen({super.key});
@@ -109,28 +110,44 @@ class _WelcomeScreenState extends State<WelcomeScreen>
           Theme.of(context).colorScheme.surface,
         ],
         child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.all(24),
-            keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
-            child: FadeTransition(
-              opacity: _fadeAnimation,
-              child: SlideTransition(
-                position: _slideAnimation,
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const SizedBox(height: 40),
-                    _buildLogo(primaryColor),
-                    const SizedBox(height: 32),
-                    _buildTitle(context),
-                    const SizedBox(height: 40),
-                    _buildNameCard(context),
-                    const SizedBox(height: 24),
-                    _buildSeasonInfo(context),
-                  ],
+          child: Stack(
+            children: [
+              SingleChildScrollView(
+                padding: const EdgeInsets.all(24),
+                keyboardDismissBehavior: ScrollViewKeyboardDismissBehavior.onDrag,
+                child: FadeTransition(
+                  opacity: _fadeAnimation,
+                  child: SlideTransition(
+                    position: _slideAnimation,
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        const SizedBox(height: 40),
+                        _buildLogo(primaryColor),
+                        const SizedBox(height: 32),
+                        _buildTitle(context),
+                        const SizedBox(height: 40),
+                        _buildNameCard(context),
+                        const SizedBox(height: 24),
+                        _buildSeasonInfo(context),
+                      ],
+                    ),
+                  ),
                 ),
               ),
-            ),
+              Positioned(
+                top: 16,
+                right: 16,
+                child: IconButton(
+                  icon: Icon(
+                    Theme.of(context).brightness == Brightness.dark
+                        ? Icons.light_mode
+                        : Icons.dark_mode,
+                  ),
+                  onPressed: () => NeuroApp.toggleTheme(context),
+                ),
+              ),
+            ],
           ),
         ),
       ),

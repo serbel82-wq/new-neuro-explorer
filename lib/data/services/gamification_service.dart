@@ -39,6 +39,7 @@ class GamificationService {
   static const String _profileKey = 'user_profile';
   static const String _unlockedAchievementsKey = 'unlocked_achievements';
   static const String _pendingRewardsKey = 'pending_rewards';
+  static const String _seasonStarsKey = 'season_stars'; // Новый ключ для звёзд по сезонам
 
   static SharedPreferences? _prefs;
 
@@ -174,6 +175,48 @@ class GamificationService {
         description: 'Пригласи родителя в кабинет',
         iconName: 'family_restroom',
         isRare: false),
+    Achievement(
+        id: 'star_collector_10',
+        title: 'Сборщик звёзд',
+        description: 'Собери 10 звёзд',
+        iconName: 'stars',
+        isRare: false),
+    Achievement(
+        id: 'star_collector_50',
+        title: 'Звёздный охотник',
+        description: 'Собери 50 звёзд',
+        iconName: 'auto_awesome',
+        isRare: false),
+    Achievement(
+        id: 'star_collector_100',
+        title: 'Звездочёт',
+        description: 'Собери 100 звёзд',
+        iconName: 'nightlight_round',
+        isRare: true),
+    Achievement(
+        id: 'ai_conversation_starter',
+        title: 'Первый разговор',
+        description: 'Начни первый диалог с ИИ',
+        iconName: 'chat_bubble_outline',
+        isRare: false),
+    Achievement(
+        id: 'ai_explorer',
+        title: 'Исследователь ИИ',
+        description: 'Задай 10 вопросов ИИ',
+        iconName: 'help_outline',
+        isRare: false),
+    Achievement(
+        id: 'daily_goal_achiever',
+        title: 'Целеустремлённый',
+        description: 'Выполни дневную цель 7 дней подряд',
+        iconName: 'flag',
+        isRare: false),
+    Achievement(
+        id: 'social_share',
+        title: 'Популяризатор',
+        description: 'Поделился результатом с друзьями',
+        iconName: 'share',
+        isRare: false),
   ];
 
   static UserProfile _getEmptyProfile(String name) {
@@ -198,6 +241,14 @@ class GamificationService {
       return _getEmptyProfile(name);
     }
     final Map<String, dynamic> json = jsonDecode(data);
+    
+    // Загрузка звёзд по сезонам
+    Map<int, int> seasonStars = {};
+    if (json['seasonStars'] != null) {
+      final starsData = json['seasonStars'] as Map<String, dynamic>;
+      seasonStars = starsData.map((key, value) => int.parse(key), value as int);
+    }
+    
     return UserProfile(
       name: json['name'] ?? 'Путник',
       xp: json['xp'] ?? 0,
@@ -211,6 +262,8 @@ class GamificationService {
           ? DateTime.parse(json['lastLoginDate'])
           : null,
       totalXpEarned: json['totalXpEarned'] ?? 0,
+      totalStars: json['totalStars'] ?? 0,
+      seasonStars: seasonStars,
     );
   }
 
@@ -231,6 +284,8 @@ class GamificationService {
       'longestStreak': profile.longestStreak,
       'lastLoginDate': profile.lastLoginDate?.toIso8601String(),
       'totalXpEarned': profile.totalXpEarned,
+      'totalStars': profile.totalStars,
+      'seasonStars': profile.seasonStars.map((key, value) => key.toString(), value),
     };
     await prefs.setString(_profileKey, jsonEncode(json));
   }
@@ -453,6 +508,57 @@ class GamificationService {
     }
   }
 
+  // Добавить звёзды за урок (1-3 звезды в зависимости от результата)
+  static Future<void> addStars(int seasonId, int stars) async {
+    final profile = getProfile();
+    final currentSeasonStars = profile.seasonStars[seasonId] ?? 0;
+    final newSeasonStars = currentSeasonStars + stars;
+    final newTotalStars = profile.totalStars + stars;
+    
+    final newSeasonStarsMap = Map<int, int>.from(profile.seasonStars);
+    newSeasonStarsMap[seasonId] = newSeasonStars;
+    
+    final updatedProfile = profile.copyWith(
+      totalStars: newTotalStars,
+      seasonStars: newSeasonStarsMap,
+    );
+    await _saveProfile(updatedProfile);
+    
+    // Проверка достижений по звёздам
+    if (newTotalStars >= 10) {
+      await unlockAchievement('star_collector_10');
+    }
+    if (newTotalStars >= 50) {
+      await unlockAchievement('star_collector_50');
+    }
+    if (newTotalStars >= 100) {
+      await unlockAchievement('star_collector_100');
+    }
+  }
+
+  // Получить звёзды для конкретного сезона
+  static int getSeasonStars(int seasonId) {
+    final profile = getProfile();
+    return profile.seasonStars[seasonId] ?? 0;
+  }
+
+  // Получить общее количество звёзд
+  static int getTotalStars() {
+    final profile = getProfile();
+    return profile.totalStars;
+  }
+
+  // Добавить звёзды за прохождение урока с результатом
+  static Future<int> addLessonWithStars(int seasonId, int taskScore) async {
+    // taskScore от 0 до 100
+    int stars = 1; // Минимум 1 звезда за завершение
+    if (taskScore >= 60) stars = 2;
+    if (taskScore >= 90) stars = 3;
+    
+    await addStars(seasonId, stars);
+    return stars;
+  }
+
   static Map<String, dynamic> getGamificationStats() {
     final profile = getProfile();
     final unlocked = getUnlockedAchievements();
@@ -471,6 +577,8 @@ class GamificationService {
       'achievementsUnlocked': unlocked.length,
       'totalAchievements': totalAchievements,
       'achievementProgress': unlocked.length / totalAchievements,
+      'totalStars': profile.totalStars,
+      'seasonStars': profile.seasonStars,
     };
   }
 
@@ -495,9 +603,8 @@ class GamificationService {
     if (level < 25) return '🚀';
     if (level < 30) return '🔥';
     if (level < 35) return '💎';
-    if (level < 40) return 'Гуру';
-    return 'Легенда';
-    if (level < 45) return '🏆';
+    if (level < 40) return '🏆';
+    if (level < 45) return '👑';
     return '🌟✨';
   }
 

@@ -116,6 +116,21 @@ class _LessonScreenState extends State<LessonScreen> {
     // Gamification - add XP for lesson completion
     final xpEarned = await GamificationService.addLessonComplete();
 
+    // Calculate score based on completed tasks (for stars)
+    final lesson = _lesson;
+    int taskScore = 50; // Default score
+    if (lesson != null && lesson.tasks.isNotEmpty) {
+      final completedTasks = _completedTaskIds.length;
+      final totalTasks = lesson.tasks.length;
+      taskScore = totalTasks > 0 ? ((completedTasks / totalTasks) * 100).round() : 50;
+    }
+
+    // Add stars based on score
+    final starsEarned = await GamificationService.addLessonWithStars(
+      lesson?.seasonId ?? 1,
+      taskScore,
+    );
+
     // Check for achievements
     if (widget.lessonId == 1) {
       await GamificationService.unlockAchievement('first_step');
@@ -123,11 +138,11 @@ class _LessonScreenState extends State<LessonScreen> {
 
     if (mounted) {
       widget.onComplete?.call();
-      _showCompletionDialog(xpEarned);
+      _showCompletionDialog(xpEarned, starsEarned);
     }
   }
 
-  void _showCompletionDialog(int xpEarned) {
+  void _showCompletionDialog(int xpEarned, int starsEarned) {
     final nextLesson = LessonDataProvider.getNextLesson(widget.lessonId);
     final stats = GamificationService.getGamificationStats();
 
@@ -155,7 +170,13 @@ class _LessonScreenState extends State<LessonScreen> {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(Icons.star, color: Colors.amber, size: 28),
+                  Row(
+                    children: List.generate(3, (index) => Icon(
+                      Icons.star,
+                      color: index < starsEarned ? Colors.amber : Colors.grey.shade300,
+                      size: 28,
+                    )),
+                  ),
                   const SizedBox(width: 8),
                   Text(
                     '+$xpEarned XP',
