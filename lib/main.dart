@@ -18,10 +18,8 @@ void main() async {
   runApp(const NeuroApp());
 }
 
-/// Корневое приложение: тема, локаль, именованные маршруты.
-///
-/// Для [TextField] и виджетов Material на веб нужны [localizationsDelegates]
-/// (иначе — «No MaterialLocalizations found»).
+/// Главное приложение НейроИсследователь
+/// Обучение детей нейросетям через интерактивные уроки
 class NeuroApp extends StatelessWidget {
   const NeuroApp({super.key});
 
