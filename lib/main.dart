@@ -18,8 +18,7 @@ void main() async {
   runApp(const NeuroApp());
 }
 
-/// Главное приложение НейроИсследователь
-/// Обучение детей нейросетям через интерактивные уроки
+/// Главное приложение НейроИсследователь - обучение детей нейросетям
 class NeuroApp extends StatelessWidget {
   const NeuroApp({super.key});
 
