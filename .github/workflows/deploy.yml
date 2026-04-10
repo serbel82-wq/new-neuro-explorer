@@ -24,12 +24,13 @@ jobs:
         run: flutter pub get
 
       - name: Build
-        run: flutter build web --release --web-renderer html
+        run: timeout 300 flutter build web --release --web-renderer html
+        timeout-minutes: 6
 
       - name: Check build
         run: ls -la build/web/
 
-      - uses: peaceiris/actions-gh-pages@v3
+      - uses: peaceiris/actions-gh-pages@v3.9.3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./build/web
