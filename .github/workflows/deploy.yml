@@ -26,6 +26,7 @@ jobs:
           flutter config --enable-web
           flutter pub get
           flutter build web --release --web-renderer html
+        shell: bash
 
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v3
