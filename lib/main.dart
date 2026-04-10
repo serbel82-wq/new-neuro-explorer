@@ -24,14 +24,20 @@ void main() async {
   try {
     await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform);
+    debugPrint('Firebase initialized successfully');
   } catch (e) {
-    debugPrint('Firebase initialization skipped (not configured): $e');
+    debugPrint('Firebase initialization failed: $e');
   }
 
-  await StorageService.init();
-  await GamificationService.init();
-  await AuthService().initialize();
-  await FirebaseService().initialize();
+  try {
+    await StorageService.init();
+    await GamificationService.init();
+    await AuthService().initialize();
+    await FirebaseService().initialize();
+  } catch (e) {
+    debugPrint('Service initialization error: $e');
+  }
+  
   runApp(const NeuroApp());
 }
 
