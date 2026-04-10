@@ -17,20 +17,100 @@ jobs:
         with:
           flutter-version: '3.16.3'
 
-      - name: Enable web
-        run: flutter config --enable-web
+      - run: flutter config --enable-web
 
-      - name: Get dependencies
-        run: flutter pub get
+      - run: flutter pub get
 
-      - name: Build
-        run: timeout 300 flutter build web --release --web-renderer html
-        timeout-minutes: 6
+      - run: flutter build web --release --web-renderer html
 
-      - name: Check build
-        run: ls -la build/web/
-
-      - uses: peaceiris/actions-gh-pages@v3.9.3
+      - name: Deploy via API
+        uses: actions/github-script@v7
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/web
+          script: |
+            const fs = require('fs');
+            const path = require('path');
+            
+            const buildDir = path.join(process.cwd(), 'build', 'web');
+            
+            // Get all files recursively
+            const files = {};
+            function getFiles(dir, base = '') {
+              const items = fs.readdirSync(dir);
+              for (const item of items) {
+                const fullPath = path.join(dir, item);
+                const relPath = path.join(base, item);
+                const stat = fs.statSync(fullPath);
+                if (stat.isDirectory()) {
+                  getFiles(fullPath, relPath);
+                } else {
+                  files[relPath] = fs.readFileSync(fullPath);
+                }
+              }
+            }
+            
+            getFiles(buildDir);
+            console.log('Found', Object.keys(files).length, 'files');
+            
+            // Create blobs
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            const blobs = {};
+            for (const [filePath, content] of Object.entries(files)) {
+              const { data } = await github.rest.git.createBlob({
+                owner,
+                repo,
+                content: content.toString('base64'),
+                encoding: 'base64'
+              });
+              blobs[filePath] = data.sha;
+            }
+            
+            // Get current gh-pages ref
+            let parentSha;
+            try {
+              const { data: ref } = await github.rest.git.getRef({
+                owner,
+                repo,
+                ref: 'heads/gh-pages'
+              });
+              parentSha = ref.object.sha;
+            } catch (e) {
+              parentSha = null;
+            }
+            
+            // Create tree
+            const tree = Object.entries(blobs).map(([path, sha]) => ({
+              path,
+              mode: '100644',
+              type: 'blob',
+              sha
+            }));
+            
+            const { data: treeData } = await github.rest.git.createTree({
+              owner,
+              repo,
+              tree,
+              base_tree: parentSha
+            });
+            
+            // Create commit
+            const commitParents = parentSha ? [parentSha] : [];
+            const { data: commit } = await github.rest.git.createCommit({
+              owner,
+              repo,
+              message: 'Deploy: ' + process.env.GITHUB_SHA,
+              tree: treeData.sha,
+              parents: commitParents
+            });
+            
+            // Update ref
+            await github.rest.git.updateRef({
+              owner,
+              repo,
+              ref: 'heads/gh-pages',
+              sha: commit.sha,
+              force: true
+            });
+            
+            console.log('Deployed to gh-pages:', commit.sha);
