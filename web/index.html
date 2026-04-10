@@ -24,6 +24,23 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <div id="loading">Загрузка...</div>
   <script src="flutter_bootstrap.js" async></script>
+  <script>
+    window.addEventListener('flutter-first-frame', function() {
+      document.getElementById('loading').style.display = 'none';
+    });
+  </script>
+  <style>
+    #loading {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      font-family: Arial, sans-serif;
+      font-size: 24px;
+      color: #666;
+    }
+  </style>
 </body>
 </html>
