@@ -80,7 +80,7 @@ class _LevelsTreeScreenState extends State<LevelsTreeScreen> {
     final hasAI = subscriptionInfo['hasAIAssistant'] as bool? ?? false;
     final isTrialActive = subscriptionInfo['isTrialActive'] as bool? ?? true;
     
-    final freeSeasonLimit = (isSubscribed || isTrialActive) ? 8 : 2;
+    final freeSeasonLimit = (isSubscribed || isTrialActive) ? 8 : 1;
     
     setState(() {
       _seasons = LessonDataProvider.getSeasons();
