@@ -3,6 +3,7 @@ import '../app_routes.dart';
 import '../screens/onboarding_screen.dart';
 import '../screens/auth_screen.dart';
 import '../data/services/storage_service.dart';
+import '../data/services/referral_service.dart';
 import '../widgets/premium_animations.dart';
 
 class WelcomeScreen extends StatefulWidget {
@@ -16,6 +17,7 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     with TickerProviderStateMixin {
   final TextEditingController _nameController = TextEditingController();
   bool _isLoading = false;
+  bool _isParentMode = false;
 
   late AnimationController _fadeController;
   late AnimationController _slideController;
@@ -97,6 +99,18 @@ class _WelcomeScreenState extends State<WelcomeScreen>
     }
   }
 
+  Future<void> _onParentStart() async {
+    Navigator.of(context).push(
+      PageRouteBuilder(
+        pageBuilder: (context, animation, secondaryAnimation) =>
+            const AuthScreen(),
+        transitionsBuilder: (context, animation, secondaryAnimation, child) {
+          return FadeTransition(opacity: animation, child: child);
+        },
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final primaryColor = Theme.of(context).colorScheme.primary;
@@ -125,8 +139,12 @@ class _WelcomeScreenState extends State<WelcomeScreen>
                     _buildTitle(context),
                     const SizedBox(height: 40),
                     _buildNameCard(context),
+                    const SizedBox(height: 16),
+                    _buildParentToggle(context),
                     const SizedBox(height: 24),
                     _buildSeasonInfo(context),
+                    const SizedBox(height: 16),
+                    _buildReferralButton(context),
                   ],
                 ),
               ),
