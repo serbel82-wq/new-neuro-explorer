@@ -37,3 +37,4 @@ jobs:
           branch: gh-pages
           force: true
           directory: build/web
+          allow-empty: true
