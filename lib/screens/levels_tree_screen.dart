@@ -5,7 +5,7 @@ import 'avatar_selection_screen.dart';
 import 'parent_dashboard_screen.dart';
 import 'chat_screen.dart';
 import 'subscription_screen.dart';
-import '../widgets/ai_assistant_widget.dart';
+import 'ai_chat_screen.dart';
 import '../data/models/season.dart';
 import '../data/models/lesson.dart';
 import '../data/services/storage_service.dart';
@@ -337,6 +337,25 @@ class _LevelsTreeScreenState extends State<LevelsTreeScreen> {
                   },
                 ),
               ),
+              const SizedBox(height: 16),
+              if (!season.isUnlocked)
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: () {
+                      Navigator.pop(context);
+                      Navigator.of(context).push(
+                        MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
+                      );
+                    },
+                    icon: const Icon(Icons.lock_open),
+                    label: const Text('Открыть доступ'),
+                    style: FilledButton.styleFrom(
+                      backgroundColor: color,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                  ),
+                ),
               const SizedBox(height: 8),
               TextButton(
                 onPressed: () => Navigator.pop(context),
@@ -480,11 +499,52 @@ class _LevelsTreeScreenState extends State<LevelsTreeScreen> {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        IconButton(
-          icon: Icon(Icons.smart_toy, color: seasonColor),
-          tooltip: 'AI Помощник',
-          onPressed: () => _showAIAssistant(),
+        GestureDetector(
+          onTap: () => _showAIAssistant(),
+          child: Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.cyan.withOpacity(0.3),
+                  Colors.blue.withOpacity(0.2),
+                ],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.cyan.withOpacity(0.3),
+                  blurRadius: 8,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: Stack(
+              children: [
+                Center(
+                  child: Icon(Icons.smart_toy, color: Colors.cyan.shade700, size: 26),
+                ),
+                Positioned(
+                  right: 4,
+                  bottom: 4,
+                  child: Container(
+                    width: 12,
+                    height: 12,
+                    decoration: BoxDecoration(
+                      color: Colors.green,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: Colors.white, width: 2),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
         ),
+        const SizedBox(width: 4),
         IconButton(
           icon: Icon(Icons.emoji_events, color: seasonColor),
           tooltip: 'Достижения',
@@ -503,64 +563,10 @@ class _LevelsTreeScreenState extends State<LevelsTreeScreen> {
   }
 
   void _showAIAssistant() {
-    showDialog(
-      context: context,
-      barrierDismissible: true,
-      builder: (context) => Dialog(
-        backgroundColor: Colors.transparent,
-        child: Container(
-          width: MediaQuery.of(context).size.width * 0.9,
-          height: MediaQuery.of(context).size.height * 0.7,
-          decoration: BoxDecoration(
-            color: Theme.of(context).scaffoldBackgroundColor,
-            borderRadius: BorderRadius.circular(20),
-          ),
-          child: Column(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).colorScheme.primaryContainer,
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.smart_toy, color: Colors.deepPurple),
-                    const SizedBox(width: 8),
-                    Text(
-                      'AI Помощник',
-                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const Spacer(),
-                    IconButton(
-                      icon: const Icon(Icons.close),
-                      onPressed: () => Navigator.pop(context),
-                    ),
-                  ],
-                ),
-              ),
-              Expanded(
-                child: _buildAIChatInterface(),
-              ),
-            ],
-          ),
-        ),
+    Navigator.of(context).push(
+      MaterialPageRoute(
+        builder: (_) => _AIChatFullScreen(userName: _displayName),
       ),
-    );
-  }
-
-  Widget _buildAIChatInterface() {
-    return AIAssistantWidget(
-      childName: _displayName,
-      onMinimize: () => Navigator.pop(context),
-      onSubscribe: () {
-        Navigator.pop(context);
-        Navigator.of(context).push(
-          MaterialPageRoute(builder: (_) => const SubscriptionScreen()),
-        );
-      },
     );
   }
 
