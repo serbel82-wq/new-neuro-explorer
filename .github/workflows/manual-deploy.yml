@@ -1,12 +1,7 @@
-name: Manual Deploy
+name: Manual Deploy (Full)
 
 on:
   workflow_dispatch:
-    inputs:
-      commit_sha:
-        description: 'Commit SHA to deploy (leave empty for latest successful build)'
-        required: false
-        default: ''
 
 jobs:
   deploy:
@@ -14,69 +9,59 @@ jobs:
     permissions:
       contents: write
     steps:
-      - name: Determine commit to use
-        id: determine
+      - name: Download full build from known good commit
         run: |
-          if [ -n "${{ github.event.inputs.commit_sha }}" ]; then
-            echo "sha=${{ github.event.inputs.commit_sha }}" >> $GITHUB_OUTPUT
-          else
-            # Use the known good commit from April 10
-            echo "sha=1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b" >> $GITHUB_OUTPUT
-          fi
-
-      - name: Download files from commit
-        run: |
-          # Use GitHub API to download the tree as an archive
-          COMMIT_SHA="${{ steps.determine.outputs.sha }}"
+          COMMIT="1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b"
           
-          mkdir -p output
           mkdir -p output/canvaskit/chromium
           mkdir -p output/icons
           mkdir -p output/assets
           
-          # Download each file with -f flag to fail silently (no error if 404)
-          # But we need these files to exist
+          files=(
+            "main.dart.js"
+            "flutter_bootstrap.js" 
+            "flutter_service_worker.js"
+            "index.html"
+            "manifest.json"
+            "version.json"
+            "flutter.js"
+            "canvaskit/canvaskit.js"
+            "canvaskit/canvaskit.wasm"
+            "canvaskit/canvaskit.js.symbols"
+            "canvaskit/skwasm.js"
+            "canvaskit/skwasm.wasm"
+            "canvaskit/skwasm.worker.js"
+            "canvaskit/chromium/canvaskit.js"
+            "canvaskit/chromium/canvaskit.wasm"
+            "canvaskit/chromium/canvaskit.js.symbols"
+            "icons/Icon-192.png"
+            "icons/Icon-512.png"
+            "icons/Icon-maskable-192.png"
+            "icons/Icon-maskable-512.png"
+            "assets/AssetManifest.json"
+            "assets/AssetManifest.bin"
+            "assets/FontManifest.json"
+            "assets/NOTICES"
+          )
           
-          download_file() {
-            local path="$1"
-            local out="$2"
-            local url="https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${COMMIT_SHA}/${path}"
-            echo "Downloading ${path}..."
-            curl -sL -f "$url" -o "$out" || echo "Warning: Failed to download ${path}"
-          }
+          for f in "${files[@]}"; do
+            url="https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${COMMIT}/${f}"
+            echo "Downloading ${f}..."
+            curl -sL -f "$url" -o "output/${f}" || echo "  -> failed or not found"
+          done
           
-          # Download main files (critical)
-          download_file "main.dart.js" "output/main.dart.js"
-          download_file "flutter_bootstrap.js" "output/flutter_bootstrap.js"
-          download_file "flutter_service_worker.js" "output/flutter_service_worker.js"
-          download_file "index.html" "output/index.html"
-          download_file "manifest.json" "output/manifest.json"
-          download_file "version.json" "output/version.json"
-          download_file "flutter.js" "output/flutter.js"
-          
-          # Download canvaskit
-          download_file "canvaskit/canvaskit.js" "output/canvaskit/canvaskit.js"
-          download_file "canvaskit/canvaskit.wasm" "output/canvaskit/canvaskit.wasm"
-          download_file "canvaskit/chromium/canvaskit.js" "output/canvaskit/chromium/canvaskit.js"
-          download_file "canvaskit/chromium/canvaskit.wasm" "output/canvaskit/chromium/canvaskit.wasm"
-          
-          # Download icons
-          download_file "icons/Icon-192.png" "output/icons/Icon-192.png"
-          download_file "icons/Icon-512.png" "output/icons/Icon-512.png"
-          
-          # Download assets
-          download_file "assets/AssetManifest.json" "output/assets/AssetManifest.json"
-          download_file "assets/FontManifest.json" "output/assets/FontManifest.json"
-          
-          # Create .nojekyll
+          # Always create .nojekyll
           touch output/.nojekyll
           
-          ls -la output/
+          echo "=== Files in output ==="
+          find output -type f | head -30
           
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./output
-          publish_branch: gh-pages
-          force_orphan: true
+      - name: Deploy using git push (bypasses actions-gh-pages issues)
+        run: |
+          cd output
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Deploy: full build from known good commit"
+          git push -f https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/serbel82-wq/new-neuro-explorer.git HEAD:gh-pages
