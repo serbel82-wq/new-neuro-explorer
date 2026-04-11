@@ -5,33 +5,37 @@ on:
     branches:
       - main
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
-  build-deploy:
+  build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    concurrency:
-      group: deploy-${{ github.ref }}
-      cancel-in-progress: false
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: subosito/flutter-action@v2.10.0
         with:
           flutter-version: '3.24.0'
 
-      - name: Install dependencies
-        run: flutter pub get
+      - run: flutter config --enable-web
+      - run: flutter pub get
+      - run: flutter build web --release --web-renderer html
 
-      - name: Build
-        run: flutter build web --release --web-renderer html
-
-      - name: Deploy
-        uses: peaceiris/actions-gh-pages@v4.0.0
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./build/web
-          # This is the key part - don't set empty string for CNAME
-          # Remove any CNAME setting
+          path: build/web/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
