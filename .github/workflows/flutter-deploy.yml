@@ -11,6 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -25,11 +26,18 @@ jobs:
       - name: Build Flutter Web
         run: flutter build web --release --web-renderer html
 
-      - name: Deploy to GitHub Pages
-        uses: JamesIves/github-pages-deploy-action@v4
+      - name: Check build output
+        run: |
+          echo "=== Build output ==="
+          ls -la build/web/
+          echo "=== main.dart.js size ==="
+          ls -lh build/web/main.dart.js
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          repository-name: serbel82-wq/new-neuro-explorer
-          branch: gh-pages
-          folder: build/web
-          clean: true
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./build/web
+          user_name: github-actions[bot]
+          user_email: github-actions[bot]@users.noreply.github.com
+          commit_message: "Deploy $(date)"
