@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -20,13 +20,37 @@ jobs:
 
       - run: flutter pub get
 
-      - name: Build
+      - name: Build Flutter Web
         run: |
-          set -e
-          echo "Building Flutter Web..."
-          flutter build web --release --web-renderer html
+          echo "=== Build started at $(date) ===" 
+          flutter build web --release --web-renderer html 2>&1 | tee build.log
+          echo "=== Build finished with exit code: $? ==="
 
-      - name: Deploy
+      - name: Upload build log
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build-log
+          path: build.log
+
+      - name: Upload build output
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-output
+          path: build/web/
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download build output
+        uses: actions/download-artifact@v4
+        with:
+          name: build-output
+          path: build/web/
+
+      - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v3
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
