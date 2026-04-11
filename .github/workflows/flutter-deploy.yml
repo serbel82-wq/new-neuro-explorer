@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+  workflow_dispatch:
 
 jobs:
   build-and-deploy:
@@ -11,6 +12,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: bluefireteam/flutter-gh-pages@v8
+      - name: Debug - check repo visibility
+        run: |
+          echo "Repository: ${{ github.repository }}"
+          echo "Is private: ${{ github.repository_private }}"
+
+      - name: Build and Deploy
+        uses: bluefireteam/flutter-gh-pages@v9
         with:
           baseHref: /new-neuro-explorer/
+          customArgs: '--verbose'
