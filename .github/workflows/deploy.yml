@@ -31,6 +31,9 @@ jobs:
       - name: Clean build
         run: flutter clean
 
+      - name: Get dependencies again
+        run: flutter pub get
+
       - name: Build Flutter Web
         run: flutter build web --release --web-renderer html
 
