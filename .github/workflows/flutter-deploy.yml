@@ -9,16 +9,27 @@ on:
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Debug - check repo visibility
-        run: |
-          echo "Repository: ${{ github.repository }}"
-          echo "Is private: ${{ github.repository_private }}"
-
-      - name: Build and Deploy
-        uses: bluefireteam/flutter-gh-pages@v9
+      - name: Set up Flutter
+        uses: subosito/flutter-action@v2
         with:
-          baseHref: /new-neuro-explorer/
-          customArgs: '--verbose'
+          channel: stable
+
+      - name: Install dependencies
+        run: flutter pub get
+
+      - name: Build Flutter Web
+        run: flutter build web --release --web-renderer html
+
+      - name: Deploy to GitHub Pages
+        uses: JamesIves/github-pages-deploy-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          repository-name: serbel82-wq/new-neuro-explorer
+          branch: gh-pages
+          folder: build/web
+          clean: true
