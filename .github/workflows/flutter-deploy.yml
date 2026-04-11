@@ -21,20 +21,9 @@ jobs:
       - run: flutter pub get
 
       - name: Build Flutter Web
-        run: |
-          echo "=== Build started at $(date) ===" 
-          flutter build web --release --web-renderer html 2>&1 | tee build.log
-          echo "=== Build finished with exit code: $? ==="
-
-      - name: Upload build log
-        uses: actions/upload-artifact@v4
-        if: always()
-        with:
-          name: build-log
-          path: build.log
+        run: flutter build web --release --web-renderer html
 
       - name: Upload build output
-        if: success()
         uses: actions/upload-artifact@v4
         with:
           name: build-output
