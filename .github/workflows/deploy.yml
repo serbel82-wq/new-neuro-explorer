@@ -35,10 +35,10 @@ jobs:
           rm -rf .dart_tool build
 
       - name: Get dependencies
-        run: flutter pub get
+        run: flutter pub get --no-precompile
 
       - name: Build Flutter Web
-        run: flutter build web --release
+        run: flutter build web --release --no-pub
 
       - name: Verify build output
         run: |
