@@ -2,25 +2,66 @@ name: Manual Deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: 'Commit SHA to deploy (leave empty for latest successful build)'
+        required: false
+        default: ''
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
-      - name: Download working files from commit
+      - name: Determine commit to use
+        id: determine
+        run: |
+          if [ -n "${{ github.event.inputs.commit_sha }}" ]; then
+            echo "sha=${{ github.event.inputs.commit_sha }}" >> $GITHUB_OUTPUT
+          else
+            # Use the known good commit from April 10
+            echo "sha=1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download files from commit
         run: |
           mkdir -p output
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/main.dart.js" -o output/main.dart.js
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/flutter_bootstrap.js" -o output/flutter_bootstrap.js
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/flutter_service_worker.js" -o output/flutter_service_worker.js
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/index.html" -o output/index.html
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/manifest.json" -o output/manifest.json
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/version.json" -o output/version.json
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/flutter.js" -o output/flutter.js
+          mkdir -p canvaskit/chromium
+          mkdir -p icons
+          
+          # Download main files
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/main.dart.js" -o output/main.dart.js
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/flutter_bootstrap.js" -o output/flutter_bootstrap.js
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/flutter_service_worker.js" -o output/flutter_service_worker.js
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/index.html" -o output/index.html
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/manifest.json" -o output/manifest.json
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/version.json" -o output/version.json
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/flutter.js" -o output/flutter.js
+          
+          # Download canvaskit
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/canvaskit/canvaskit.js" -o output/canvaskit/canvaskit.js
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/canvaskit/canvaskit.wasm" -o output/canvaskit/canvaskit.wasm
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/canvaskit/chromium/canvaskit.js" -o output/canvaskit/chromium/canvaskit.js
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/canvaskit/chromium/canvaskit.wasm" -o output/canvaskit/chromium/canvaskit.wasm
+          
+          # Download icons
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/icons/Icon-192.png" -o output/icons/Icon-192.png
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/icons/Icon-512.png" -o output/icons/Icon-512.png
+          
+          # Download assets
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/assets/AssetManifest.json" -o output/assets/AssetManifest.json
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/assets/FontManifest.json" -o output/assets/FontManifest.json
+          
+          echo ".nojekyll" > output/.nojekyll
+          
           ls -la output/
+          ls -la output/canvaskit/
           
       - name: Deploy
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./output
+          publish_branch: gh-pages
+          force_orphan: true
