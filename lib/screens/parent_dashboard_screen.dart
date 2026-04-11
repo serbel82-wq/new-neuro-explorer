@@ -23,6 +23,7 @@ class ParentDashboardScreen extends StatelessWidget {
     if (minutes < 60) return '$minutes минут';
     return '${minutes ~/ 60} час${minutes >= 120 ? 'а' : ''}';
   }
+
   Widget build(BuildContext context) {
     final profile = GamificationService.getProfile();
     final stats = GamificationService.getGamificationStats();
@@ -546,14 +547,6 @@ class ParentDashboardScreen extends StatelessWidget {
   static const String _timeLimitKey = 'parent_time_limit_minutes';
   static const String _notificationsEnabledKey = 'parent_notifications';
   static const String _emailReportsKey = 'parent_email_reports';
-
-  String _getTimeLimitText() {
-    if (_prefs == null) return 'Не установлено';
-    final minutes = _prefs!.getInt(_timeLimitKey) ?? 0;
-    if (minutes == 0) return 'Без ограничений';
-    if (minutes < 60) return '$minutes минут';
-    return '${minutes ~/ 60} час${minutes >= 120 ? 'а' : ''}';
-  }
 
   Future<void> _saveTimeLimit(int minutes) async {
     await init();

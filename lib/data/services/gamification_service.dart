@@ -246,7 +246,9 @@ class GamificationService {
     Map<int, int> seasonStars = {};
     if (json['seasonStars'] != null) {
       final starsData = json['seasonStars'] as Map<String, dynamic>;
-      seasonStars = starsData.map((key, value) => int.parse(key), value as int);
+      seasonStars = Map.fromEntries(
+        starsData.entries.map((e) => MapEntry(int.parse(e.key), e.value as int)),
+      );
     }
     
     return UserProfile(
@@ -285,7 +287,9 @@ class GamificationService {
       'lastLoginDate': profile.lastLoginDate?.toIso8601String(),
       'totalXpEarned': profile.totalXpEarned,
       'totalStars': profile.totalStars,
-      'seasonStars': profile.seasonStars.map((key, value) => key.toString(), value),
+      'seasonStars': Map.fromEntries(
+        profile.seasonStars.entries.map((e) => MapEntry(e.key.toString(), e.value)),
+      ),
     };
     await prefs.setString(_profileKey, jsonEncode(json));
   }

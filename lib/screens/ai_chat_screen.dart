@@ -1,16 +1,16 @@
 import 'package:flutter/material.dart';
 import '../data/services/groq_chat_service.dart';
 
-class _AIChatFullScreen extends StatefulWidget {
+class AIChatFullScreen extends StatefulWidget {
   final String userName;
 
-  const _AIChatFullScreen({required this.userName});
+  const AIChatFullScreen({super.key, required this.userName});
 
   @override
-  State<_AIChatFullScreen> createState() => _AIChatFullScreenState();
+  State<AIChatFullScreen> createState() => _AIChatFullScreenState;
 }
 
-class _AIChatFullScreenState extends State<_AIChatFullScreen> {
+class _AIChatFullScreenState extends State<AIChatFullScreen> {
   final List<Map<String, String>> _messages = [];
   final TextEditingController _controller = TextEditingController();
   bool _isLoading = false;

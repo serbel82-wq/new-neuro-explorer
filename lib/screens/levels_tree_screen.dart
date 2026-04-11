@@ -576,7 +576,7 @@ class _LevelsTreeScreenState extends State<LevelsTreeScreen> {
   void _showAIAssistant() {
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => _AIChatFullScreen(userName: _displayName),
+        builder: (_) => AIChatFullScreen(userName: _displayName),
       ),
     );
   }
