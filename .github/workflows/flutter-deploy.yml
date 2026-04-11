@@ -7,7 +7,24 @@ on:
   workflow_dispatch:
 
 jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2.10.0
+        with:
+          flutter-version: '3.24.5'
+
+      - run: flutter config --enable-web
+
+      - run: flutter pub get
+
+      - name: Run Flutter analyze
+        run: flutter analyze --no-pub 2>&1 | head -100
+
   build:
+    needs: analyze
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -21,14 +38,7 @@ jobs:
       - run: flutter pub get
 
       - name: Build Flutter Web
-        run: |
-          flutter build web --release --web-renderer html || true
-        continue-on-error: true
-
-      - name: Debug build output
-        run: |
-          ls -la build/web/ || echo "No build/web directory"
-          ls -la build/ || echo "No build directory"
+        run: flutter build web --release --web-renderer html
 
       - name: Upload build output
         uses: actions/upload-artifact@v4
@@ -48,9 +58,6 @@ jobs:
         with:
           name: flutter-build
           path: ./deploy
-
-      - name: List files
-        run: ls -la ./deploy
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v3
