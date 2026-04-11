@@ -26,37 +26,52 @@ jobs:
 
       - name: Download files from commit
         run: |
-          mkdir -p output
-          mkdir -p canvaskit/chromium
-          mkdir -p icons
+          # Use GitHub API to download the tree as an archive
+          COMMIT_SHA="${{ steps.determine.outputs.sha }}"
           
-          # Download main files
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/main.dart.js" -o output/main.dart.js
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/flutter_bootstrap.js" -o output/flutter_bootstrap.js
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/flutter_service_worker.js" -o output/flutter_service_worker.js
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/index.html" -o output/index.html
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/manifest.json" -o output/manifest.json
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/version.json" -o output/version.json
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/flutter.js" -o output/flutter.js
+          mkdir -p output
+          mkdir -p output/canvaskit/chromium
+          mkdir -p output/icons
+          mkdir -p output/assets
+          
+          # Download each file with -f flag to fail silently (no error if 404)
+          # But we need these files to exist
+          
+          download_file() {
+            local path="$1"
+            local out="$2"
+            local url="https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${COMMIT_SHA}/${path}"
+            echo "Downloading ${path}..."
+            curl -sL -f "$url" -o "$out" || echo "Warning: Failed to download ${path}"
+          }
+          
+          # Download main files (critical)
+          download_file "main.dart.js" "output/main.dart.js"
+          download_file "flutter_bootstrap.js" "output/flutter_bootstrap.js"
+          download_file "flutter_service_worker.js" "output/flutter_service_worker.js"
+          download_file "index.html" "output/index.html"
+          download_file "manifest.json" "output/manifest.json"
+          download_file "version.json" "output/version.json"
+          download_file "flutter.js" "output/flutter.js"
           
           # Download canvaskit
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/canvaskit/canvaskit.js" -o output/canvaskit/canvaskit.js
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/canvaskit/canvaskit.wasm" -o output/canvaskit/canvaskit.wasm
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/canvaskit/chromium/canvaskit.js" -o output/canvaskit/chromium/canvaskit.js
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/canvaskit/chromium/canvaskit.wasm" -o output/canvaskit/chromium/canvaskit.wasm
+          download_file "canvaskit/canvaskit.js" "output/canvaskit/canvaskit.js"
+          download_file "canvaskit/canvaskit.wasm" "output/canvaskit/canvaskit.wasm"
+          download_file "canvaskit/chromium/canvaskit.js" "output/canvaskit/chromium/canvaskit.js"
+          download_file "canvaskit/chromium/canvaskit.wasm" "output/canvaskit/chromium/canvaskit.wasm"
           
           # Download icons
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/icons/Icon-192.png" -o output/icons/Icon-192.png
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/icons/Icon-512.png" -o output/icons/Icon-512.png
+          download_file "icons/Icon-192.png" "output/icons/Icon-192.png"
+          download_file "icons/Icon-512.png" "output/icons/Icon-512.png"
           
           # Download assets
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/assets/AssetManifest.json" -o output/assets/AssetManifest.json
-          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/${{ steps.determine.outputs.sha }}/assets/FontManifest.json" -o output/assets/FontManifest.json
+          download_file "assets/AssetManifest.json" "output/assets/AssetManifest.json"
+          download_file "assets/FontManifest.json" "output/assets/FontManifest.json"
           
-          echo ".nojekyll" > output/.nojekyll
+          # Create .nojekyll
+          touch output/.nojekyll
           
           ls -la output/
-          ls -la output/canvaskit/
           
       - name: Deploy
         uses: peaceiris/actions-gh-pages@v4
