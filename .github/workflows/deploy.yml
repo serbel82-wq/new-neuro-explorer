@@ -22,7 +22,7 @@ jobs:
         run: echo "COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+        uses: subosito/flutter-action@v2.23.0
         with:
           flutter-version: '3.27.3'
           channel: 'stable'
@@ -35,10 +35,18 @@ jobs:
           rm -rf .dart_tool build
 
       - name: Get dependencies
-        run: flutter pub get --no-precompile
+        run: |
+          echo "Running pub get..."
+          flutter pub get
+          echo "Checking packages..."
+          flutter pub deps
 
       - name: Build Flutter Web
-        run: flutter build web --release --no-pub
+        run: |
+          echo "Starting build..."
+          flutter build web --release -v 2>&1 | tee build.log
+          echo "Build log:"
+          cat build.log
 
       - name: Verify build output
         run: |
