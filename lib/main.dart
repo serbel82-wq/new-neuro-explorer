@@ -23,16 +23,16 @@ class NeuroApp extends StatefulWidget {
 
   @override
   State<NeuroApp> createState() => _NeuroAppState();
-}
-
-class _NeuroAppState extends State<NeuroApp> {
-  ThemeMode _themeMode = ThemeMode.light;
-  static const String _themeKey = 'theme_mode';
 
   static Future<void> toggleTheme(BuildContext context) async {
     final state = context.findAncestorStateOfType<_NeuroAppState>();
     await state?._toggleTheme();
   }
+}
+
+class _NeuroAppState extends State<NeuroApp> {
+  ThemeMode _themeMode = ThemeMode.light;
+  static const String _themeKey = 'theme_mode';
 
   @override
   void initState() {
