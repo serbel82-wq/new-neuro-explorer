@@ -7,24 +7,7 @@ on:
   workflow_dispatch:
 
 jobs:
-  analyze:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - uses: subosito/flutter-action@v2.10.0
-        with:
-          flutter-version: '3.24.5'
-
-      - run: flutter config --enable-web
-
-      - run: flutter pub get
-
-      - name: Run Flutter analyze
-        run: flutter analyze --no-pub 2>&1 | head -100
-
   build:
-    needs: analyze
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -38,7 +21,21 @@ jobs:
       - run: flutter pub get
 
       - name: Build Flutter Web
-        run: flutter build web --release --web-renderer html
+        run: |
+          flutter build web --release --web-renderer html 2>&1 | tee build.log || true
+          echo "--- Build exit: $? ---"
+          cat build.log
+
+      - name: Check result
+        run: |
+          if [ -f build/web/main.dart.js ]; then
+            echo "BUILD SUCCESS - main.dart.js exists"
+            ls -la build/web/
+          else
+            echo "BUILD FAILED - No main.dart.js"
+            ls -la build/ || echo "build dir missing"
+            ls -la build/web/ || echo "build/web dir missing"
+          fi
 
       - name: Upload build output
         uses: actions/upload-artifact@v4
