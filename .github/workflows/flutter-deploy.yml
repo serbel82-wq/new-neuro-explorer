@@ -9,9 +9,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      pages: write
     steps:
       - uses: actions/checkout@v4
 
@@ -26,21 +23,27 @@ jobs:
       - name: Build Flutter Web
         run: flutter build web --release --web-renderer html
 
-      - name: Upload Pages artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Upload build output
+        uses: actions/upload-artifact@v4
         with:
+          name: flutter-build
           path: build/web/
+          retention-days: 1
 
   deploy:
     needs: build
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pages: write
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+      contents: none
     steps:
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+      - name: Download artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: flutter-build
+          path: ./deploy
+
+      - name: Deploy to gh-pages
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./deploy
