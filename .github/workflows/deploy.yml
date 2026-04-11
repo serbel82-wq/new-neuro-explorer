@@ -15,6 +15,11 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get commit info for cache key
+        run: echo "COMMIT_SHA=$(git rev-parse HEAD)" >> $GITHUB_ENV
 
       - name: Setup Flutter
         uses: subosito/flutter-action@v2
@@ -25,13 +30,11 @@ jobs:
       - name: Enable web support
         run: flutter config --enable-web
 
+      - name: Clean any cached build
+        run: |
+          rm -rf .dart_tool build
+
       - name: Get dependencies
-        run: flutter pub get
-
-      - name: Clean build
-        run: flutter clean
-
-      - name: Get dependencies again
         run: flutter pub get
 
       - name: Build Flutter Web
