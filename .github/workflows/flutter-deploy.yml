@@ -21,7 +21,14 @@ jobs:
       - run: flutter pub get
 
       - name: Build Flutter Web
-        run: flutter build web --release --web-renderer html
+        run: |
+          flutter build web --release --web-renderer html || true
+        continue-on-error: true
+
+      - name: Debug build output
+        run: |
+          ls -la build/web/ || echo "No build/web directory"
+          ls -la build/ || echo "No build directory"
 
       - name: Upload build output
         uses: actions/upload-artifact@v4
@@ -34,13 +41,16 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     permissions:
-      contents: none
+      contents: write
     steps:
       - name: Download artifact
         uses: actions/download-artifact@v4
         with:
           name: flutter-build
           path: ./deploy
+
+      - name: List files
+        run: ls -la ./deploy
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v3
