@@ -1,0 +1,26 @@
+name: Manual Deploy
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download working files from commit
+        run: |
+          mkdir -p output
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/main.dart.js" -o output/main.dart.js
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/flutter_bootstrap.js" -o output/flutter_bootstrap.js
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/flutter_service_worker.js" -o output/flutter_service_worker.js
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/index.html" -o output/index.html
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/manifest.json" -o output/manifest.json
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/version.json" -o output/version.json
+          curl -sL "https://raw.githubusercontent.com/serbel82-wq/new-neuro-explorer/1ff16915f580297ee5ae7c8c1d1b46e7c7f7cf1b/flutter.js" -o output/flutter.js
+          ls -la output/
+          
+      - name: Deploy
+        uses: peaceiris/actions-gh-pages@v3
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./output
