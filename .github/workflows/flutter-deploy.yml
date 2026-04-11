@@ -26,15 +26,7 @@ jobs:
       - name: Build Flutter Web
         run: |
           flutter config --enable-web
-          flutter build web --release --web-renderer html 2>&1 || true
-          echo "=== Exit code: $? ==="
-
-      - name: Check build output
-        run: |
-          echo "=== Build output ==="
-          ls -la build/web/
-          echo "=== main.dart.js size ==="
-          ls -lh build/web/main.dart.js
+          flutter build web --release --web-renderer html
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
