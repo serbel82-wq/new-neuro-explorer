@@ -26,12 +26,18 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
-      - name: Build Flutter Web (ignore errors)
+      - name: Build Flutter Web
         run: |
-          cd .
-          flutter build web --release --web-renderer html 2>&1 || true
-          echo "Checking build output..."
-          ls -la build/web/ 2>/dev/null || echo "build/web not found"
+          echo "=== Starting Flutter build ==="
+          flutter build web --release --web-renderer html
+          BUILD_EXIT=$?
+          echo "=== Build exit code: $BUILD_EXIT ==="
+          if [ $BUILD_EXIT -ne 0 ]; then
+            echo "Build failed with exit code $BUILD_EXIT"
+            exit 1
+          fi
+          echo "=== Build succeeded ==="
+          ls -la build/web/
 
       - name: Deploy to gh-pages
         uses: peaceiris/actions-gh-pages@v4
