@@ -18,6 +18,22 @@ import 'data/services/storage_service.dart';
 import 'data/services/gamification_service.dart';
 import 'data/services/firebase_service.dart';
 
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  
+  try {
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+  } catch (e) {
+    debugPrint('Firebase init failed (expected in web without config): $e');
+  }
+  
+  await GamificationService.init();
+  
+  runApp(const NeuroApp());
+}
+
 class NeuroApp extends StatefulWidget {
   const NeuroApp({super.key});
 
